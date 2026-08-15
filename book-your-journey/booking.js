@@ -141,3 +141,5 @@ form.addEventListener('submit',event=>{event.preventDefault();showMessage('');if
 results.addEventListener('click',event=>{const button=event.target.closest('[data-choose-flight]');if(button)chooseFlight(button.dataset.chooseFlight,Number(button.dataset.index))});
 seatMap.addEventListener('click',event=>{const button=event.target.closest('[data-seat]');if(button&&!button.disabled)selectSeat(button.dataset.seat)});
 $('[data-issue-ticket]').addEventListener('click',issueTicket);
+
+window.addEventListener('stellaris:languagechange',()=>location.reload());

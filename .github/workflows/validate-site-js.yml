@@ -5,11 +5,14 @@ on:
     branches: ["main"]
     paths:
       - "app.js"
+      - "operations-model.js"
       - "auth-session.js"
       - "firebase-config.js"
       - "login/**/*.js"
       - "signup/**/*.js"
       - "flight-information/**/*.js"
+      - "book-your-journey/**/*.js"
+      - "view-my-starmiles/**/*.js"
       - "translations.js"
       - "translations-extra.js"
       - ".github/workflows/validate-site-js.yml"
@@ -25,10 +28,11 @@ jobs:
         shell: bash
         run: |
           node --input-type=module --check < app.js
+          node --input-type=module --check < operations-model.js
           node --input-type=module --check < auth-session.js
           node --input-type=module --check < firebase-config.js
           node --input-type=module --check < translations.js
           node --input-type=module --check < translations-extra.js
           while IFS= read -r -d '' file; do
             node --input-type=module --check < "$file"
-          done < <(find login signup flight-information -type f -name '*.js' -print0)
+          done < <(find login signup flight-information book-your-journey view-my-starmiles -type f -name '*.js' -print0)

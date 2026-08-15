@@ -152,5 +152,11 @@ window.STELLARIS_EXTRA_I18N={rows:[
 ["소속","Department","Department","所属部门","所属","Departamento","Service"],
 ["소프트웨어/홍보팀","Software/Public Relations Team","Software/Public Relations Team","软件/宣传团队","ソフトウェア／広報チーム","Equipo de Software/Relaciones Públicas","Équipe logiciels/relations publiques"],
 ["이름","Name","Name","姓名","氏名","Nombre","Nom"],
-["Instagram @pus.spotter","Instagram @pus.spotter","Instagram @pus.spotter","Instagram @pus.spotter","Instagram @pus.spotter","Instagram @pus.spotter","Instagram @pus.spotter"]
+["Instagram @pus.spotter","Instagram @pus.spotter","Instagram @pus.spotter","Instagram @pus.spotter","Instagram @pus.spotter","Instagram @pus.spotter","Instagram @pus.spotter"],
+["Google로 계속하기","Continue with Google","Continue with Google","使用 Google 继续","Googleで続ける","Continuar con Google","Continuer avec Google"],
+["또는","or","or","或","または","o","ou"],
+["비밀번호 확인","Confirm password","Confirm password","确认密码","パスワード確認","Confirmar contraseña","Confirmer le mot de passe"],
+["비밀번호는 6자 이상 입력해 주세요.","Use at least 6 characters for your password.","Use at least 6 characters for your password.","密码至少需要6个字符。","パスワードは6文字以上で入力してください。","La contraseña debe tener al menos 6 caracteres.","Le mot de passe doit comporter au moins 6 caractères."],
+["비밀번호를 잊으셨나요?","Forgot your password?","Forgot your password?","忘记密码？","パスワードをお忘れですか？","¿Olvidaste tu contraseña?","Mot de passe oublié ?"],
+["내 계정","My account","My account","我的账户","マイアカウント","Mi cuenta","Mon compte"]
 ]};

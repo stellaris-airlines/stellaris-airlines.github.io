@@ -44,8 +44,8 @@ const headerHTML=()=>`<header class="site-header"><div class="header-inner shell
     <div class="nav-item"><a href="${A('support/')}">지원 센터</a><div class="mega-menu"><div class="mega-inner shell-wide"><div class="mega-title"><span>STELLARIS AIRLINES</span><strong>지원 센터</strong></div><div class="mega-links"><a href="${A('support/')}">고객 지원 & Q&A</a><a href="${A('find-your-reservations/')}">예약 조회</a><a href="${A('support/#booking')}">예약/항공권</a><a href="${A('support/#baggage')}">수하물 문의</a></div></div></div></div>
     <div class="nav-item"><a href="${A('membership/')}">Star Miles</a></div>
   </nav>
-  <div class="header-tools">${languageControl()}<a class="book-link" href="${A('book-your-journey/')}">항공권 예약하기</a><a href="${A('find-your-reservations/')}">예약 조회</a><span class="tool-divider"></span><a href="${A('login/')}">로그인</a><a class="signup-link" href="${A('signup/')}">회원가입</a><button class="mobile-menu-button" id="mobileMenuButton" type="button" aria-label="메뉴 열기" aria-expanded="false"><span></span><span></span><span></span></button></div>
-</div><div class="mobile-nav" id="mobileNav" hidden><a href="${A('book-your-journey/')}">항공권 예약하기</a><a href="${A('find-your-reservations/')}">예약 조회</a><a href="${A('about-us/')}">항공사 정보</a><a href="${A('flight-information/')}">운항 정보</a><a href="${A('destinations/')}">노선 안내</a><a href="${A('travel-info/')}">여행 준비</a><a href="${A('our-fleets/')}">보유 항공기</a><a href="${A('membership/')}">Star Miles</a><a href="${A('support/')}">지원 센터</a><a href="${A('login/')}">로그인</a><a href="${A('signup/')}">회원가입</a></div></header>`;
+  <div class="header-tools">${languageControl()}<a class="book-link" href="${A('book-your-journey/')}">항공권 예약하기</a><a href="${A('find-your-reservations/')}">예약 조회</a><span class="tool-divider"></span><a data-auth-guest href="${A('login/')}">로그인</a><a data-auth-guest class="signup-link" href="${A('signup/')}">회원가입</a><a data-auth-user href="${A('login/')}" hidden>내 계정</a><a data-auth-logout href="#" hidden>로그아웃</a><button class="mobile-menu-button" id="mobileMenuButton" type="button" aria-label="메뉴 열기" aria-expanded="false"><span></span><span></span><span></span></button></div>
+</div><div class="mobile-nav" id="mobileNav" hidden><a href="${A('book-your-journey/')}">항공권 예약하기</a><a href="${A('find-your-reservations/')}">예약 조회</a><a href="${A('about-us/')}">항공사 정보</a><a href="${A('flight-information/')}">운항 정보</a><a href="${A('destinations/')}">노선 안내</a><a href="${A('travel-info/')}">여행 준비</a><a href="${A('our-fleets/')}">보유 항공기</a><a href="${A('membership/')}">Star Miles</a><a href="${A('support/')}">지원 센터</a><a data-auth-guest href="${A('login/')}">로그인</a><a data-auth-guest href="${A('signup/')}">회원가입</a><a data-auth-user href="${A('login/')}" hidden>내 계정</a><a data-auth-logout href="#" hidden>로그아웃</a></div></header>`;
 
 const footerHTML=()=>`<footer class="site-footer"><div class="shell footer-main"><a class="brand footer-brand" href="${A('')}"><img class="brand-symbol-image" src="${A('assets/stellaris-symbol.png')}" alt=""><img class="brand-wordmark-image" src="${A('assets/stellaris-wordmark.png')}" alt="STELLARIS AIRLINES"></a><div class="footer-columns"><div><strong>항공사</strong><a href="${A('about-us/')}">항공사 소개</a><a href="${A('group/')}">STELLARIS GROUP</a><a href="${A('our-fleets/')}">항공기</a></div><div><strong>여행</strong><a href="${A('book-your-journey/')}">항공권 예약하기</a><a href="${A('find-your-reservations/')}">예약 조회</a><a href="${A('destinations/')}">노선 안내</a></div><div><strong>서비스</strong><a href="${A('travel-info/')}">여행 준비</a><a href="${A('wifi/')}">기내 Wi-Fi</a><a href="${A('inflight-entertainment/')}">기내 엔터테인먼트</a></div><div><strong>지원</strong><a href="${A('support/')}">지원 센터</a><a href="${A('membership/')}">Star Miles</a></div></div></div><div class="shell footer-bottom"><span>© 2026 STELLARIS AIRLINES</span><div><a href="${A('terms/')}">이용약관</a><a href="${A('privacy/')}">개인정보처리방침</a></div></div></footer>`;
 
@@ -66,6 +66,11 @@ function installCommonChrome(){
   }
 }
 installCommonChrome();
+
+const authSessionScript=document.createElement('script');
+authSessionScript.type='module';
+authSessionScript.src=A('auth-session.js?v=20260816-auth');
+document.head.appendChild(authSessionScript);
 
 document.querySelectorAll('.book-link').forEach(el=>el.textContent='항공권 예약하기');
 
@@ -191,7 +196,7 @@ let savedLanguage='ko';
 try{savedLanguage=localStorage.getItem('stellaris-language')||'ko';}catch(e){}
 if(!languageCodes.includes(savedLanguage))savedLanguage='ko';
 
-const I18N_VERSION='20260816-privacy';
+const I18N_VERSION='20260816-auth';
 const finishI18n=()=>{
   const baseRows=window.STELLARIS_I18N?.rows||[];
   const extraRows=window.STELLARIS_EXTRA_I18N?.rows||[];

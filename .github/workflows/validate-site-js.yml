@@ -1,0 +1,22 @@
+name: Validate site JavaScript
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "app.js"
+      - "translations.js"
+      - "translations-extra.js"
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Check JavaScript syntax
+        run: |
+          node --check app.js
+          node --check translations.js
+          node --check translations-extra.js

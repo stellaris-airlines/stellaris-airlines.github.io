@@ -191,14 +191,25 @@ let savedLanguage='ko';
 try{savedLanguage=localStorage.getItem('stellaris-language')||'ko';}catch(e){}
 if(!languageCodes.includes(savedLanguage))savedLanguage='ko';
 
-const dataScript=document.createElement('script');
-dataScript.src=A('translations.js');
-dataScript.defer=true;
-dataScript.onload=()=>{
-  dictionaries=normaliseDict(window.STELLARIS_I18N||{});
+const finishI18n=()=>{
+  const baseRows=window.STELLARIS_I18N?.rows||[];
+  const extraRows=window.STELLARIS_EXTRA_I18N?.rows||[];
+  dictionaries=normaliseDict({rows:[...baseRows,...extraRows]});
   i18nReady=true;
   setLanguage(savedLanguage,false);
 };
-dataScript.onerror=()=>{i18nReady=true;dictionaries=normaliseDict({rows:[]});setLanguage('ko',false);};
+const loadExtraTranslations=()=>{
+  const extraScript=document.createElement('script');
+  extraScript.src=A('translations-extra.js');
+  extraScript.defer=true;
+  extraScript.onload=finishI18n;
+  extraScript.onerror=finishI18n;
+  document.head.appendChild(extraScript);
+};
+const dataScript=document.createElement('script');
+dataScript.src=A('translations.js');
+dataScript.defer=true;
+dataScript.onload=loadExtraTranslations;
+dataScript.onerror=()=>{window.STELLARIS_I18N={rows:[]};loadExtraTranslations();};
 document.head.appendChild(dataScript);
 })();

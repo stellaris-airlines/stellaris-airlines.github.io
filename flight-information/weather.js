@@ -1,30 +1,197 @@
 (()=>{
 'use strict';
+
 const I18N={
-ko:{origin:'출발 공항',destination:'도착 공항',refresh:'기상정보 새로고침',loading:'공항 기상정보를 불러오는 중입니다…',normal:'정상 운항',changed:'운항 시간 변경',delay:'지연',cancel:'운항 취소',boarding:'탑승 준비',updated:'업데이트',temp:'기온',feels:'체감',precip:'강수',gust:'돌풍',visibility:'시정',wind:'바람',good:'출발지와 목적지의 기상 조건이 운항 기준을 충족하여 정상 운항으로 판정했습니다.',watchMsg:'강수·강풍 또는 저시정이 감지되어 이 가상 항공편을 지연으로 자동 판정했습니다.',alertMsg:'강한 돌풍, 많은 강수, 뇌우 또는 매우 낮은 시정이 감지되어 이 가상 항공편을 운항 취소로 자동 판정했습니다.',disclaimer:'스텔라리스항공은 가상 항공사입니다. 표시되는 정상·지연·취소 상태는 공개 기상자료를 바탕으로 이 사이트가 자동 생성한 가상 운항정보입니다.',error:'기상정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.',clear:'맑음',cloudy:'흐림',fog:'안개',rain:'비',snow:'눈',storm:'뇌우'},
-'en-US':{origin:'Departure airport',destination:'Arrival airport',refresh:'Refresh weather',loading:'Loading airport weather…',normal:'On time',changed:'Time changed',delay:'Delayed',cancel:'Cancelled',boarding:'Boarding soon',updated:'Updated',temp:'Temperature',feels:'Feels like',precip:'Precipitation',gust:'Gusts',visibility:'Visibility',wind:'Wind',good:'Weather at both airports meets the operating criteria. This virtual flight is on time.',watchMsg:'Rain, strong wind or low visibility has automatically placed this virtual flight in delayed status.',alertMsg:'Severe gusts, heavy precipitation, thunderstorms or very low visibility have automatically cancelled this virtual flight.',disclaimer:'Stellaris Airlines is a virtual airline. On-time, delayed and cancelled statuses are simulated automatically from public weather data.',error:'Weather data is unavailable. Please try again shortly.',clear:'Clear',cloudy:'Cloudy',fog:'Fog',rain:'Rain',snow:'Snow',storm:'Thunderstorm'}};
-I18N['en-GB']=I18N['en-US']; I18N['zh-CN']={...I18N['en-US'],origin:'出发机场',destination:'到达机场',refresh:'刷新天气',loading:'正在加载机场天气…',normal:'正常运行',changed:'时间变更',delay:'延误',cancel:'取消',boarding:'准备登机',updated:'更新时间',disclaimer:'此自动提示使用公开天气数据，不代表实际延误或取消。请以航空公司和机场公告为准。'};
-I18N.ja={...I18N['en-US'],origin:'出発空港',destination:'到着空港',refresh:'気象情報を更新',loading:'空港の気象情報を読み込み中…',normal:'通常運航',changed:'時刻変更',delay:'遅延',cancel:'欠航',boarding:'搭乗準備',updated:'更新',disclaimer:'公開気象データによる自動参考情報であり、遅延・欠航を確定するものではありません。航空会社と空港の案内をご確認ください。'};
-I18N.es={...I18N['en-US'],origin:'Aeropuerto de salida',destination:'Aeropuerto de llegada',refresh:'Actualizar tiempo',loading:'Cargando el tiempo…',normal:'A tiempo',watch:'Retrasado',alert:'Cancelado',updated:'Actualizado',disclaimer:'Este aviso automático usa datos meteorológicos públicos y no confirma retrasos ni cancelaciones.'};
-I18N.fr={...I18N['en-US'],origin:'Aéroport de départ',destination:"Aéroport d’arrivée",refresh:'Actualiser la météo',loading:'Chargement de la météo…',normal:'À l’heure',changed:'Horaire modifié',delay:'Retardé',cancel:'Annulé',boarding:'Embarquement prochain',updated:'Actualisé',disclaimer:"Cet avis automatique utilise des données météo publiques et ne confirme ni retard ni annulation."};
-const airports={
-ICN:['인천','Incheon',37.4602,126.4407],GMP:['김포','Gimpo',37.5583,126.7906],CJU:['제주','Jeju',33.5104,126.4914],PUS:['부산','Busan',35.1795,128.9382],
-NYC:['뉴욕','New York',40.6413,-73.7781],SEA:['시애틀','Seattle',47.4502,-122.3088],LAX:['로스앤젤레스','Los Angeles',33.9416,-118.4085],HNL:['호놀룰루','Honolulu',21.3187,-157.9225],
-THT:['타히티','Tahiti',-17.5537,-149.607],SYD:['시드니','Sydney',-33.9399,151.1753],LHR:['런던','London',51.4700,-0.4543],CDG:['파리','Paris',49.0097,2.5479],STR:['산토리니','Santorini',36.3992,25.4793],DXB:['두바이','Dubai',25.2532,55.3657]};
-const root=document.querySelector('[data-weather-app]'); if(!root)return;
-const getLang=()=>{const v=localStorage.getItem('stellaris-language')||document.documentElement.lang||'ko';return I18N[v]?v:'ko'};
-const t=k=>(I18N[getLang()]||I18N.ko)[k]||I18N['en-US'][k]||k;
-const select=(name,value)=>'<label class="weather-field"><span data-weather-label="'+name+'">'+t(name)+'</span><select data-'+name+'>'+Object.entries(airports).map(([code,a])=>'<option value="'+code+'"'+(code===value?' selected':'')+'>'+code+' · '+(getLang()==='ko'?a[0]:a[1])+'</option>').join('')+'</select></label>';
-root.innerHTML='<div class="weather-controls">'+select('origin','ICN')+'<div class="weather-route-arrow">→</div>'+select('destination','NYC')+'<button class="weather-refresh" type="button">'+t('refresh')+'</button></div><div data-weather-output><p>'+t('loading')+'</p></div><p class="weather-disclaimer" data-weather-disclaimer>'+t('disclaimer')+'</p>';
-const output=root.querySelector('[data-weather-output]'),button=root.querySelector('.weather-refresh');
-const weatherText=code=>code===0?[t('clear'),'☀️']:code<=3?[t('cloudy'),'☁️']:code<=48?[t('fog'),'🌫️']:code<=67||code<=82?[t('rain'),'🌧️']:code<=77||code<=86?[t('snow'),'🌨️']:[t('storm'),'⛈️'];
-const risk=c=>{const gust=c.wind_gusts_10m||0,precip=c.precipitation||0,vis=c.visibility??10000,code=c.weather_code||0;if(gust>=55||precip>=15||vis<1000||code>=95)return 3;if(gust>=45||precip>=8||vis<2000||code>=80)return 2;if(gust>=35||precip>=3||vis<4000||code>=51)return 1;return 0};
-const departures={ICN:[450,750,1110],GMP:[360,520,680,840,1000,1160,1320],CJU:[360,520,680,840,1000,1160,1320],PUS:[360,520,680,840,1000,1160,1320],NYC:[750,1050,1410],SEA:[690,990,1350],LAX:[690,990,1350],HNL:[780,1080,0],THT:[480,720,960],SYD:[540,780,1020],LHR:[570,810,1110],CDG:[600,840,1140],STR:[540,780,1080],DXB:[630,870,1170]};
-const isBoarding=(code,time)=>{const m=Number(time?.slice(11,13))*60+Number(time?.slice(14,16));return (departures[code]||[]).some(x=>(x-m+1440)%1440<=45)};
-const card=(code,c)=>{const a=airports[code],w=weatherText(c.weather_code||0);return '<article class="airport-weather"><header><div><span class="airport-code">'+code+'</span><h3>'+(getLang()==='ko'?a[0]:a[1])+'</h3></div><span class="weather-icon" aria-hidden="true">'+w[1]+'</span></header><div class="weather-primary"><strong>'+Math.round(c.temperature_2m)+'°</strong><span>'+w[0]+'</span></div><div class="weather-metrics"><div><small>'+t('feels')+'</small><b>'+Math.round(c.apparent_temperature)+'°C</b></div><div><small>'+t('precip')+'</small><b>'+c.precipitation+' mm</b></div><div><small>'+t('gust')+'</small><b>'+Math.round(c.wind_gusts_10m)+' km/h</b></div><div><small>'+t('visibility')+'</small><b>'+((c.visibility??0)/1000).toFixed(1)+' km</b></div><div><small>'+t('wind')+'</small><b>'+Math.round(c.wind_speed_10m)+' km/h</b></div><div><small>'+t('temp')+'</small><b>'+Math.round(c.temperature_2m)+'°C</b></div></div></article>'};
-async function load(){
-button.disabled=true;button.textContent=t('loading');output.innerHTML='<p>'+t('loading')+'</p>';
-const from=root.querySelector('[data-origin]').value,to=root.querySelector('[data-destination]').value;
-try{const list=[from,to].map(code=>{const a=airports[code];const u=new URL('https://api.open-meteo.com/v1/forecast');u.search=new URLSearchParams({latitude:a[2],longitude:a[3],current:'temperature_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,wind_gusts_10m,visibility',wind_speed_unit:'kmh',timezone:'auto'});return fetch(u).then(r=>{if(!r.ok)throw Error(r.status);return r.json()})});const data=await Promise.all(list);const level=Math.max(risk(data[0].current),risk(data[1].current));const boarding=level===0&&isBoarding(from,data[0].current.time);const state=level===3?'cancel':level===2?'delay':level===1?'changed':boarding?'boarding':'normal',msg=level===3?'alertMsg':level>=1?'watchMsg':'good';document.querySelectorAll('[data-flight-status]').forEach(el=>el.classList.toggle('is-active',el.dataset.flightStatus===state));output.innerHTML='<div class="weather-summary"><span class="weather-state '+state+'">'+t(state)+'</span><span class="weather-updated">'+t('updated')+' · '+new Intl.DateTimeFormat(getLang(),{dateStyle:'medium',timeStyle:'short'}).format(new Date())+'</span></div><div class="airport-weather-grid">'+card(from,data[0].current)+card(to,data[1].current)+'</div><p class="weather-advisory">'+t(msg)+'</p>';}catch(e){output.innerHTML='<p class="weather-error">'+t('error')+'</p>';}finally{button.disabled=false;button.textContent=t('refresh')}}
-button.addEventListener('click',load);root.querySelectorAll('select').forEach(x=>x.addEventListener('change',load));window.addEventListener('stellaris:languagechange',()=>location.reload());load();
+  ko:{windowNote:'예정 출발 3시간 이내 항공편만 표시됩니다.',flight:'편명',departure:'출발 예정',arrival:'도착 예정',status:'운항 상태',normal:'정상 운항',changed:'운항 시간 변경',delay:'지연',cancel:'운항 취소',boarding:'탑승 준비',loading:'운항 상태를 계산하는 중입니다…',none:'현재 출발 3시간 이내에 예정된 항공편이 없습니다.',refresh:'새로고침',updated:'마지막 업데이트',minute:'분'},
+  'en-US':{windowNote:'Only flights scheduled to depart within the next 3 hours are shown.',flight:'Flight',departure:'Scheduled departure',arrival:'Scheduled arrival',status:'Status',normal:'On time',changed:'Time changed',delay:'Delayed',cancel:'Cancelled',boarding:'Boarding soon',loading:'Calculating flight status…',none:'There are no flights scheduled to depart within the next 3 hours.',refresh:'Refresh',updated:'Last updated',minute:'min'},
+  'en-GB':{windowNote:'Only flights scheduled to depart within the next 3 hours are shown.',flight:'Flight',departure:'Scheduled departure',arrival:'Scheduled arrival',status:'Status',normal:'On time',changed:'Time changed',delay:'Delayed',cancel:'Cancelled',boarding:'Boarding soon',loading:'Calculating flight status…',none:'There are no flights scheduled to depart within the next 3 hours.',refresh:'Refresh',updated:'Last updated',minute:'min'},
+  'zh-CN':{windowNote:'仅显示未来3小时内计划起飞的航班。',flight:'航班号',departure:'预计出发',arrival:'预计到达',status:'航班状态',normal:'正常运行',changed:'时间变更',delay:'延误',cancel:'取消',boarding:'准备登机',loading:'正在计算航班状态…',none:'未来3小时内没有计划起飞的航班。',refresh:'刷新',updated:'最后更新',minute:'分钟'},
+  ja:{windowNote:'出発予定時刻の3時間前から表示します。',flight:'便名',departure:'出発予定',arrival:'到着予定',status:'運航状況',normal:'通常運航',changed:'時刻変更',delay:'遅延',cancel:'欠航',boarding:'搭乗準備',loading:'運航状況を計算しています…',none:'3時間以内に出発予定の便はありません。',refresh:'更新',updated:'最終更新',minute:'分'},
+  es:{windowNote:'Solo se muestran los vuelos con salida prevista en las próximas 3 horas.',flight:'Vuelo',departure:'Salida prevista',arrival:'Llegada prevista',status:'Estado',normal:'Operación normal',changed:'Horario modificado',delay:'Retrasado',cancel:'Cancelado',boarding:'Embarque próximo',loading:'Calculando el estado del vuelo…',none:'No hay vuelos previstos en las próximas 3 horas.',refresh:'Actualizar',updated:'Última actualización',minute:'min'},
+  fr:{windowNote:'Seuls les vols dont le départ est prévu dans les 3 prochaines heures sont affichés.',flight:'Vol',departure:'Départ prévu',arrival:'Arrivée prévue',status:'Statut',normal:'À l’heure',changed:'Horaire modifié',delay:'Retardé',cancel:'Annulé',boarding:'Embarquement prochain',loading:'Calcul du statut du vol…',none:'Aucun vol ne doit partir dans les 3 prochaines heures.',refresh:'Actualiser',updated:'Dernière mise à jour',minute:'min'}
+};
+
+const AIRPORTS={
+  ICN:{lat:37.4602,lon:126.4407,tz:'Asia/Seoul'},
+  GMP:{lat:37.5583,lon:126.7906,tz:'Asia/Seoul'},
+  CJU:{lat:33.5104,lon:126.4914,tz:'Asia/Seoul'},
+  PUS:{lat:35.1795,lon:128.9382,tz:'Asia/Seoul'},
+  NYC:{lat:40.6413,lon:-73.7781,tz:'America/New_York'},
+  SEA:{lat:47.4502,lon:-122.3088,tz:'America/Los_Angeles'},
+  LAX:{lat:33.9416,lon:-118.4085,tz:'America/Los_Angeles'},
+  HNL:{lat:21.3187,lon:-157.9225,tz:'Pacific/Honolulu'},
+  THT:{lat:-17.5537,lon:-149.607,tz:'Pacific/Tahiti'},
+  SYD:{lat:-33.9399,lon:151.1753,tz:'Australia/Sydney'},
+  LHR:{lat:51.47,lon:-0.4543,tz:'Europe/London'},
+  CDG:{lat:49.0097,lon:2.5479,tz:'Europe/Paris'},
+  STR:{lat:36.3992,lon:25.4793,tz:'Europe/Athens'},
+  DXB:{lat:25.2532,lon:55.3657,tz:'Asia/Dubai'}
+};
+
+const board=document.querySelector('[data-flight-status-board]');
+if(!board)return;
+const note=document.querySelector('[data-status-window-note]');
+const updated=document.querySelector('[data-status-updated]');
+const refresh=document.querySelector('[data-status-refresh]');
+const weatherCache=new Map();
+
+const getLang=()=>{
+  const value=localStorage.getItem('stellaris-language')||document.documentElement.lang||'ko';
+  return I18N[value]?value:'ko';
+};
+const t=key=>I18N[getLang()][key]||I18N['en-US'][key]||key;
+const locale=()=>({ko:'ko-KR','en-US':'en-US','en-GB':'en-GB','zh-CN':'zh-CN',ja:'ja-JP',es:'es-ES',fr:'fr-FR'})[getLang()]||'ko-KR';
+
+function zoneParts(date,timeZone){
+  const parts=new Intl.DateTimeFormat('en-CA',{
+    timeZone,year:'numeric',month:'2-digit',day:'2-digit',
+    hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'
+  }).formatToParts(date);
+  return Object.fromEntries(parts.filter(part=>part.type!=='literal').map(part=>[part.type,Number(part.value)]));
+}
+
+function zonedDate(day,time,timeZone){
+  const [hour,minute]=time.split(':').map(Number);
+  const guess=Date.UTC(day.year,day.month-1,day.day,hour,minute,0);
+  const first=zoneParts(new Date(guess),timeZone);
+  let actual=guess-(Date.UTC(first.year,first.month-1,first.day,first.hour,first.minute,first.second)-guess);
+  const second=zoneParts(new Date(actual),timeZone);
+  actual=guess-(Date.UTC(second.year,second.month-1,second.day,second.hour,second.minute,second.second)-actual);
+  return new Date(actual);
+}
+
+function shiftDay(day,amount){
+  const date=new Date(Date.UTC(day.year,day.month-1,day.day+amount));
+  return {year:date.getUTCFullYear(),month:date.getUTCMonth()+1,day:date.getUTCDate()};
+}
+
+function parseFlights(){
+  return [...document.querySelectorAll('.timetable-pair > div')].map(item=>{
+    const number=item.querySelector('b')?.textContent.trim();
+    const schedule=item.querySelector('span')?.textContent.replace(/\s+/g,' ').trim()||'';
+    const match=schedule.match(/^([A-Z]{3})\s+(\d{2}:\d{2})(?:\s+\([^)]*\))?\s+→\s+([A-Z]{3})\s+(\d{2}:\d{2})/);
+    if(!number||!match||!AIRPORTS[match[1]]||!AIRPORTS[match[3]])return null;
+    return {number,origin:match[1],departure:match[2],destination:match[3],arrival:match[4]};
+  }).filter(Boolean);
+}
+
+function upcomingFlights(now=new Date()){
+  const result=[];
+  for(const flight of parseFlights()){
+    const local=zoneParts(now,AIRPORTS[flight.origin].tz);
+    const today={year:local.year,month:local.month,day:local.day};
+    for(const offset of [0,1]){
+      const day=shiftDay(today,offset);
+      const departureDate=zonedDate(day,flight.departure,AIRPORTS[flight.origin].tz);
+      const minutes=(departureDate-now)/60000;
+      if(minutes>=0&&minutes<=180){
+        result.push({...flight,departureDate,minutes,key:flight.number+'-'+day.year+'-'+day.month+'-'+day.day});
+      }
+    }
+  }
+  return result.sort((a,b)=>a.departureDate-b.departureDate||a.number.localeCompare(b.number));
+}
+
+async function airportWeather(code){
+  const cached=weatherCache.get(code);
+  if(cached&&Date.now()-cached.savedAt<10*60*1000)return cached.data;
+  const airport=AIRPORTS[code];
+  const url=new URL('https://api.open-meteo.com/v1/forecast');
+  url.search=new URLSearchParams({
+    latitude:String(airport.lat),longitude:String(airport.lon),
+    current:'temperature_2m,precipitation,weather_code,wind_speed_10m,wind_gusts_10m,visibility',
+    wind_speed_unit:'kmh',forecast_days:'1',timezone:'auto'
+  });
+  const response=await fetch(url);
+  if(!response.ok)throw new Error(String(response.status));
+  const data=(await response.json()).current;
+  weatherCache.set(code,{savedAt:Date.now(),data});
+  return data;
+}
+
+function weatherRisk(current){
+  if(!current)return 0;
+  const gust=current.wind_gusts_10m||0;
+  const rain=current.precipitation||0;
+  const visibility=current.visibility??10000;
+  const code=current.weather_code||0;
+  if(gust>=55||rain>=15||visibility<1000||code>=95)return 3;
+  if(gust>=45||rain>=8||visibility<2000||code>=80)return 2;
+  if(gust>=35||rain>=3||visibility<4000||code>=51)return 1;
+  return 0;
+}
+
+function stableNumber(value){
+  let result=0;
+  for(const char of value)result=(result*31+char.charCodeAt(0))>>>0;
+  return result;
+}
+
+function assess(flight,originWeather,destinationWeather){
+  const level=Math.max(weatherRisk(originWeather),weatherRisk(destinationWeather));
+  if(level===3)return {state:'cancel',delta:0};
+  if(level===2)return {state:'delay',delta:30};
+  if(level===1)return {state:'changed',delta:15};
+  const favourable=[originWeather,destinationWeather].every(current=>
+    current&&current.precipitation===0&&(current.weather_code||0)<=1&&
+    (current.wind_gusts_10m||0)<20&&(current.visibility??10000)>=10000
+  );
+  const delta=favourable?(stableNumber(flight.key)%2===0?-5:-10):0;
+  return {state:flight.minutes<=45?'boarding':'normal',delta};
+}
+
+function deltaMarkup(delta){
+  if(!delta)return '';
+  const sign=delta>0?'+':'-';
+  return '<span class="time-delta">('+sign+String(Math.abs(delta)).padStart(2,'0')+t('minute')+')</span>';
+}
+
+function statusMarkup(state){
+  return '<span class="flight-state state-'+state+'"><i aria-hidden="true"></i><b>'+t(state)+'</b></span>';
+}
+
+function renderRows(flights,weather){
+  if(!flights.length){
+    board.innerHTML='<div class="flight-status-empty">'+t('none')+'</div>';
+    return;
+  }
+  const head='<div class="flight-status-row flight-status-head" role="row">'+
+    '<span role="columnheader">'+t('flight')+'</span>'+
+    '<span role="columnheader">'+t('departure')+'</span>'+
+    '<span role="columnheader">'+t('arrival')+'</span>'+
+    '<span role="columnheader">'+t('status')+'</span></div>';
+  const rows=flights.map(flight=>{
+    const result=assess(flight,weather.get(flight.origin),weather.get(flight.destination));
+    return '<article class="flight-status-row" role="row">'+
+      '<div class="flight-identity" role="cell" data-label="'+t('flight')+'"><strong>'+flight.number+'</strong><small>'+flight.origin+' → '+flight.destination+'</small></div>'+
+      '<div class="flight-time" role="cell" data-label="'+t('departure')+'"><b>'+flight.departure+'</b><small>'+flight.origin+'</small></div>'+
+      '<div class="flight-time" role="cell" data-label="'+t('arrival')+'"><b>'+flight.arrival+'</b>'+deltaMarkup(result.delta)+'<small>'+flight.destination+'</small></div>'+
+      '<div class="flight-status-cell" role="cell" data-label="'+t('status')+'">'+statusMarkup(result.state)+'</div>'+
+      '</article>';
+  }).join('');
+  board.innerHTML='<div class="flight-status-table" role="table">'+head+rows+'</div>';
+}
+
+async function load(force=false){
+  if(force)weatherCache.clear();
+  note.textContent=t('windowNote');
+  refresh.textContent=t('refresh');
+  refresh.disabled=true;
+  board.innerHTML='<div class="flight-status-loading">'+t('loading')+'</div>';
+  const flights=upcomingFlights();
+  const codes=[...new Set(flights.flatMap(flight=>[flight.origin,flight.destination]))];
+  const weather=new Map();
+  await Promise.all(codes.map(async code=>{
+    try{weather.set(code,await airportWeather(code));}
+    catch(error){weather.set(code,null);}
+  }));
+  renderRows(flights,weather);
+  updated.textContent=t('updated')+' · '+new Intl.DateTimeFormat(locale(),{dateStyle:'medium',timeStyle:'short'}).format(new Date());
+  refresh.disabled=false;
+}
+
+refresh.addEventListener('click',()=>load(true));
+window.addEventListener('stellaris:languagechange',()=>load(false));
+load(false);
+setInterval(()=>load(false),5*60*1000);
 })();

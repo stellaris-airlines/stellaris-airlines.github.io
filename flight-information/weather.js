@@ -13,7 +13,6 @@ const I18N={
 
 const AIRPORTS={
   ICN:{lat:37.4602,lon:126.4407,tz:'Asia/Seoul'},
-  SFO:{lat:37.6213,lon:-122.379,tz:'America/Los_Angeles'},
   GMP:{lat:37.5583,lon:126.7906,tz:'Asia/Seoul'},
   CJU:{lat:33.5104,lon:126.4914,tz:'Asia/Seoul'},
   PUS:{lat:35.1795,lon:128.9382,tz:'Asia/Seoul'},
@@ -193,7 +192,6 @@ async function load(force=false){
 
 refresh.addEventListener('click',()=>load(true));
 window.addEventListener('stellaris:languagechange',()=>load(false));
-window.addEventListener('stellaris:cargo-ready',()=>load(false));
 load(false);
 setInterval(()=>load(false),5*60*1000);
 })();

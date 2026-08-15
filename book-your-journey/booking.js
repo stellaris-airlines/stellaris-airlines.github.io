@@ -122,7 +122,7 @@ function fareChoice(flight,direction,index,family){
   return '<button class="fare-choice'+(selected?' is-selected':'')+'" type="button" data-choose-fare="'+direction+'" data-index="'+index+'" data-family="'+family.id+'">'+
     '<span class="fare-choice-name">'+family.name+'</span>'+
     '<span class="fare-choice-price">'+money(quote.pricePerPassenger)+'<small>'+t('perAdult')+'</small></span>'+
-    '<ul class="fare-benefits">'+familyBenefits(family.id).map(item=>'<li>'+item+'</li>').join('')+'</ul>'+
+    '<span class="fare-benefits">'+familyBenefits(family.id).map(item=>'<span>'+item+'</span>').join('')+'</span>'+
     '<span class="fare-choice-action">'+(selected?t('selected'):t('selectFare'))+' →</span></button>';
 }
 

@@ -9,6 +9,7 @@ on:
       - "firebase-config.js"
       - "login/**/*.js"
       - "signup/**/*.js"
+      - "flight-information/**/*.js"
       - "translations.js"
       - "translations-extra.js"
       - ".github/workflows/validate-site-js.yml"
@@ -30,4 +31,4 @@ jobs:
           node --input-type=module --check < translations-extra.js
           while IFS= read -r -d '' file; do
             node --input-type=module --check < "$file"
-          done < <(find login signup -type f -name '*.js' -print0)
+          done < <(find login signup flight-information -type f -name '*.js' -print0)

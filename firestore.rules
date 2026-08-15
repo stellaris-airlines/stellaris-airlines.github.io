@@ -65,6 +65,71 @@ service cloud.firestore {
         && request.resource.data.updatedAt == request.time;
     }
 
+
+    match /bookings/{bookingId} {
+      allow get, list: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasAll([
+          'bookingRef',
+          'userId',
+          'email',
+          'origin',
+          'destination',
+          'flightNumber',
+          'segments',
+          'passengers',
+          'cabin',
+          'totalFare',
+          'currency',
+          'milesEarned',
+          'status',
+          'createdAt'
+        ])
+        && request.resource.data.keys().hasOnly([
+          'bookingRef',
+          'userId',
+          'email',
+          'origin',
+          'destination',
+          'flightNumber',
+          'segments',
+          'passengers',
+          'cabin',
+          'totalFare',
+          'currency',
+          'milesEarned',
+          'status',
+          'createdAt'
+        ])
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.bookingRef is string
+        && request.resource.data.bookingRef.size() == 8
+        && request.resource.data.origin is string
+        && request.resource.data.destination is string
+        && request.resource.data.flightNumber is string
+        && request.resource.data.segments is list
+        && request.resource.data.segments.size() >= 1
+        && request.resource.data.segments.size() <= 2
+        && request.resource.data.passengers is int
+        && request.resource.data.passengers >= 1
+        && request.resource.data.passengers <= 4
+        && request.resource.data.cabin in ['economy', 'premium']
+        && request.resource.data.totalFare is int
+        && request.resource.data.totalFare >= 0
+        && request.resource.data.totalFare <= 100000000
+        && request.resource.data.currency == 'KRW'
+        && request.resource.data.milesEarned is int
+        && request.resource.data.milesEarned >= 0
+        && request.resource.data.milesEarned <= 500000
+        && request.resource.data.status == 'ticketed'
+        && request.resource.data.createdAt == request.time;
+
+      allow update, delete: if false;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

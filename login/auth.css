@@ -1,0 +1,9 @@
+.auth-message{margin:4px 0 0;padding:12px 14px;border:1px solid var(--line);font-size:13px;line-height:1.6;background:var(--paper);color:var(--ink)}
+.auth-message.success{border-color:rgba(82,119,73,.28);background:#f2f6ef;color:#385533}
+.auth-message.error{border-color:rgba(160,73,61,.26);background:#fbf2f0;color:#873f35}
+.auth-message.working{border-color:rgba(168,159,82,.34);background:#f8f6e9;color:#6f692d}
+#loginSubmit[disabled]{opacity:.58;cursor:wait}
+.auth-user-panel{display:grid;gap:18px;padding:24px;border:1px solid var(--line);background:var(--paper)}
+.auth-user-panel p{margin:0;color:var(--muted);font-size:13px}
+.auth-user-panel strong{font-size:20px;word-break:break-all}
+.auth-user-actions{display:flex;gap:12px;flex-wrap:wrap}

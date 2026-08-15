@@ -164,6 +164,7 @@ function setLanguage(lang,persist=true){
   if(!languageCodes.includes(lang))lang='ko';
   if(persist){try{localStorage.setItem('stellaris-language',lang);}catch(e){}}
   translateDOM(lang);
+  if(persist)window.dispatchEvent(new CustomEvent('stellaris:languagechange',{detail:{language:lang}}));
 }
 
 function bindLanguageControls(){
@@ -186,7 +187,7 @@ function bindSiteInteractions(){
   document.querySelectorAll('.demo-form').forEach(form=>form.addEventListener('submit',e=>{e.preventDefault();let p=form.querySelector('.demo-message');if(!p){p=document.createElement('p');p.className='demo-message';form.appendChild(p)}const source='현재는 웹사이트 UI 데모입니다. 실제 예약·회원 시스템은 추후 연동됩니다.';p.dataset.i18nDynamic=source;p.textContent=translateText(source,currentLanguage);}));
   const reservationTabs=document.querySelectorAll('[data-reservation-tab]');reservationTabs.forEach(btn=>btn.addEventListener('click',()=>{reservationTabs.forEach(x=>x.classList.toggle('active',x===btn));document.querySelectorAll('[data-reservation-panel]').forEach(p=>p.hidden=p.dataset.reservationPanel!==btn.dataset.reservationTab);}));
   const bookingTabs=document.querySelectorAll('[data-booking-tab]');bookingTabs.forEach(btn=>btn.addEventListener('click',()=>{bookingTabs.forEach(x=>x.classList.toggle('active',x===btn));const rf=document.getElementById('returnField');if(rf)rf.hidden=btn.dataset.bookingTab==='oneway';}));
-  const swap=document.getElementById('swapButton'),from=document.getElementById('fromInput'),to=document.getElementById('toInput');if(swap&&from&&to){swap.addEventListener('click',()=>{[from.value,to.value]=[to.value,from.value];});}
+  const swap=document.getElementById('swapButton'),from=document.getElementById('fromInput'),to=document.getElementById('toInput');if(swap&&from&&to&&!document.querySelector('.booking-engine')){swap.addEventListener('click',()=>{[from.value,to.value]=[to.value,from.value];});}
 }
 
 bindLanguageControls();

@@ -28,12 +28,6 @@ service cloud.firestore {
           'provider',
           'role',
           'status',
-          'termsAccepted',
-          'privacyAccepted',
-          'termsVersion',
-          'privacyVersion',
-          'termsAcceptedAt',
-          'privacyAcceptedAt',
           'createdAt',
           'updatedAt'
         ])
@@ -60,12 +54,6 @@ service cloud.firestore {
         && request.resource.data.provider in ['password', 'google.com']
         && request.resource.data.role == 'member'
         && request.resource.data.status == 'active'
-        && request.resource.data.termsAccepted == true
-        && request.resource.data.privacyAccepted == true
-        && request.resource.data.termsVersion == '2026-05-17'
-        && request.resource.data.privacyVersion == '2026-05-17'
-        && request.resource.data.termsAcceptedAt == request.time
-        && request.resource.data.privacyAcceptedAt == request.time
         && request.resource.data.createdAt == request.time
         && request.resource.data.updatedAt == request.time;
 

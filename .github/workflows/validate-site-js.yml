@@ -7,6 +7,7 @@ on:
       - "app.js"
       - "translations.js"
       - "translations-extra.js"
+      - ".github/workflows/validate-site-js.yml"
   workflow_dispatch:
 
 jobs:

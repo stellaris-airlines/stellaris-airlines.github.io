@@ -13,8 +13,10 @@
 .weather-summary{display:flex;align-items:center;justify-content:space-between;gap:24px;margin:28px 0 16px;padding:20px 0;border-top:1px solid rgba(255,255,255,.14);border-bottom:1px solid rgba(255,255,255,.14)}
 .weather-state{display:inline-flex;align-items:center;gap:9px;font-weight:800}
 .weather-state::before{content:"";width:10px;height:10px;border-radius:50%;background:#62b37a;box-shadow:0 0 0 5px rgba(98,179,122,.12)}
-.weather-state.watch::before{background:#e0aa48;box-shadow:0 0 0 5px rgba(224,170,72,.12)}
-.weather-state.alert::before{background:#d85f5f;box-shadow:0 0 0 5px rgba(216,95,95,.12)}
+.weather-state.changed::before{background:#aa8d12;box-shadow:0 0 0 5px rgba(170,141,18,.12)}
+.weather-state.delay::before{background:#c36c21;box-shadow:0 0 0 5px rgba(195,108,33,.12)}
+.weather-state.cancel::before{background:#c2433d;box-shadow:0 0 0 5px rgba(194,67,61,.12)}
+.weather-state.boarding::before{background:#3679ad;box-shadow:0 0 0 5px rgba(54,121,173,.12)}
 .weather-updated{font-size:11px;color:rgba(255,255,255,.55)}
 .airport-weather-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .airport-weather{padding:24px;border:1px solid rgba(255,255,255,.14);background:#101210}
@@ -34,3 +36,4 @@
 .weather-error{padding:18px;border:1px solid rgba(216,95,95,.5);color:#ffb3b3}
 @media(max-width:900px){.weather-heading{grid-template-columns:1fr}.weather-controls{grid-template-columns:1fr 42px 1fr}.weather-refresh{grid-column:1/-1}.airport-weather-grid{grid-template-columns:1fr}}
 @media(max-width:600px){.weather-panel{padding:20px}.weather-controls{grid-template-columns:1fr}.weather-route-arrow{height:28px;transform:rotate(90deg)}.weather-summary{align-items:flex-start;flex-direction:column}.weather-metrics{grid-template-columns:1fr 1fr 1fr}.weather-primary strong{font-size:38px}}
+.status-grid span{transition:transform .2s ease,box-shadow .2s ease,background .2s ease}.status-grid span.is-active{background:#fff;box-shadow:0 10px 28px rgba(20,21,18,.13);transform:translateY(-2px);font-weight:800}

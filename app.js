@@ -191,6 +191,7 @@ let savedLanguage='ko';
 try{savedLanguage=localStorage.getItem('stellaris-language')||'ko';}catch(e){}
 if(!languageCodes.includes(savedLanguage))savedLanguage='ko';
 
+const I18N_VERSION='20260815-2247';
 const finishI18n=()=>{
   const baseRows=window.STELLARIS_I18N?.rows||[];
   const extraRows=window.STELLARIS_EXTRA_I18N?.rows||[];
@@ -200,14 +201,14 @@ const finishI18n=()=>{
 };
 const loadExtraTranslations=()=>{
   const extraScript=document.createElement('script');
-  extraScript.src=A('translations-extra.js');
+  extraScript.src=A(`translations-extra.js?v=${I18N_VERSION}`);
   extraScript.defer=true;
   extraScript.onload=finishI18n;
   extraScript.onerror=finishI18n;
   document.head.appendChild(extraScript);
 };
 const dataScript=document.createElement('script');
-dataScript.src=A('translations.js');
+dataScript.src=A(`translations.js?v=${I18N_VERSION}`);
 dataScript.defer=true;
 dataScript.onload=loadExtraTranslations;
 dataScript.onerror=()=>{window.STELLARIS_I18N={rows:[]};loadExtraTranslations();};

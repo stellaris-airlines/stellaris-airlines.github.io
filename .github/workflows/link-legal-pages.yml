@@ -1,0 +1,37 @@
+name: Link legal pages
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/link-legal-pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  link:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Update footer links
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('app.js')
+          s=p.read_text(encoding='utf-8')
+          old='<a href="#">이용약관</a><a href="#">개인정보처리방침</a>'
+          new='<a href="${A(\'terms/\')}">이용약관</a><a href="${A(\'privacy/\')}">개인정보처리방침</a>'
+          if old not in s:
+              raise SystemExit('Footer placeholder links not found')
+          p.write_text(s.replace(old,new,1),encoding='utf-8')
+          PY
+      - name: Commit change
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.js
+          git commit -m "Link terms and privacy pages from footer"
+          git push origin main

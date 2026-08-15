@@ -5,6 +5,9 @@ on:
     branches: ["main"]
     paths:
       - "app.js"
+      - "firebase-config.js"
+      - "login/**/*.js"
+      - "signup/**/*.js"
       - "translations.js"
       - "translations-extra.js"
       - ".github/workflows/validate-site-js.yml"
@@ -17,7 +20,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Check JavaScript syntax
+        shell: bash
         run: |
-          node --check app.js
-          node --check translations.js
-          node --check translations-extra.js
+          node --input-type=module --check < app.js
+          node --input-type=module --check < firebase-config.js
+          node --input-type=module --check < translations.js
+          node --input-type=module --check < translations-extra.js
+          while IFS= read -r -d '' file; do
+            node --input-type=module --check < "$file"
+          done < <(find login signup -type f -name '*.js' -print0)

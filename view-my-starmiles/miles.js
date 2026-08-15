@@ -89,3 +89,5 @@ onAuthStateChanged(auth,user=>{
   if(user)renderUser(user);
   else{loading.hidden=true;account.hidden=true;guest.hidden=false;}
 });
+
+window.addEventListener('stellaris:languagechange',()=>location.reload());

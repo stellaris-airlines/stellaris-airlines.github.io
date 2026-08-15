@@ -1,0 +1,39 @@
+name: Migrate Stellaris site
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/migrate-from-old.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout destination
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Clone source repository
+        run: git clone --depth 1 https://github.com/admin-attendance/stellaris.git /tmp/stellaris-source
+
+      - name: Copy site while preserving migration workflow
+        run: |
+          rsync -a --delete --exclude='.git' --exclude='.github' /tmp/stellaris-source/ ./
+
+      - name: Commit migrated site
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to migrate."
+          else
+            git commit -m "Migrate Stellaris Airlines site"
+            git push origin main
+          fi

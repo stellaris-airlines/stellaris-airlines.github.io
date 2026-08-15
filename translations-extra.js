@@ -148,5 +148,9 @@ window.STELLARIS_EXTRA_I18N={rows:[
 ["시간 변경","Time changed","Time changed","时间变更","時刻変更","Horario modificado","Horaire modifié"],
 ["지연","Delayed","Delayed","延误","遅延","Retrasado","Retardé"],
 ["취소","Cancelled","Cancelled","取消","欠航","Cancelado","Annulé"],
-["탑승 준비","Boarding soon","Boarding soon","准备登机","搭乗準備","Embarque próximo","Embarquement prochain"]
+["탑승 준비","Boarding soon","Boarding soon","准备登机","搭乗準備","Embarque próximo","Embarquement prochain"],
+["소속","Department","Department","所属部门","所属","Departamento","Service"],
+["소프트웨어/홍보팀","Software/Public Relations Team","Software/Public Relations Team","软件/宣传团队","ソフトウェア／広報チーム","Equipo de Software/Relaciones Públicas","Équipe logiciels/relations publiques"],
+["이름","Name","Name","姓名","氏名","Nombre","Nom"],
+["Instagram @pus.spotter","Instagram @pus.spotter","Instagram @pus.spotter","Instagram @pus.spotter","Instagram @pus.spotter","Instagram @pus.spotter","Instagram @pus.spotter"]
 ]};

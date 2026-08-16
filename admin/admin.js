@@ -18,13 +18,8 @@ let unsubscribeNotices=null;
 function status(message,type=''){
   if(!statusBox)return;statusBox.textContent=message;statusBox.className='admin-status'+(type?' '+type:'');
 }
-async function isAdmin(user){
-  if(!user)return false;
-  if(ADMIN_EMAILS.has(String(user.email||'').toLowerCase()))return true;
-  try{
-    const snapshot=await getDoc(doc(db,'users',user.uid));
-    return snapshot.exists()&&snapshot.data()?.role==='admin';
-  }catch(error){return false;}
+function isAdmin(user){
+  return Boolean(user&&ADMIN_EMAILS.has(String(user.email||'').toLowerCase()));
 }
 async function loadBanner(){
   try{
@@ -119,11 +114,11 @@ noticeForm?.addEventListener('submit',async event=>{
 cancelButton?.addEventListener('click',resetNoticeForm);
 
 onAuthStateChanged(auth,async user=>{
-  const allowed=await isAdmin(user);
+  const allowed=isAdmin(user);
   if(!allowed){
     consoleHost.hidden=true;gate.hidden=false;
     gate.innerHTML=user
-      ?'<strong>관리자 권한이 없습니다.</strong><p>관리자 계정으로 로그인해 주세요.</p>'
+      ?'<strong>관리자 권한이 없습니다.</strong><p>승인된 관리자 계정으로 로그인해 주세요.</p>'
       :'<strong>로그인이 필요합니다.</strong><p><a href="../login/?next=../admin/">로그인</a> 후 관리자 페이지를 다시 열어 주세요.</p>';
     return;
   }

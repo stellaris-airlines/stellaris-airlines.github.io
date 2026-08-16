@@ -54,16 +54,31 @@ const INTERNATIONAL_ROUTES=[
 
 /* Planning size is an assignment tier, not a published seat count. */
 export const PASSENGER_FLEET=[
-  {code:'Q400',range:'domestic',planningSize:1,layout:'regional'},
-  {code:'E175',range:'domestic',planningSize:2,layout:'regional'},
-  {code:'A220-300',range:'domestic',planningSize:3,layout:'single'},
-  {code:'A320neo',range:'domestic',planningSize:4,layout:'single'},
-  {code:'A321neo',range:'domestic',planningSize:5,layout:'single-long'},
-  {code:'A330-900',range:'international',planningSize:1,layout:'wide-eight'},
-  {code:'B787-9',range:'international',planningSize:2,layout:'wide-nine'},
-  {code:'A350-900',range:'international',planningSize:3,layout:'wide-nine'},
-  {code:'B777-300ER',range:'international',planningSize:4,layout:'wide-ten'},
-  {code:'A380-800',range:'international',planningSize:5,layout:'wide-ten-long'}
+  {code:'ERJ-145',range:'domestic',planningSize:1},
+  {code:'CRJ200',range:'domestic',planningSize:1},
+  {code:'Q400',range:'domestic',planningSize:2},
+  {code:'E175',range:'domestic',planningSize:2},
+  {code:'B717-200',range:'domestic',planningSize:2},
+  {code:'BAe 146',range:'domestic',planningSize:3},
+  {code:'A220-300',range:'domestic',planningSize:3},
+  {code:'B737-800',range:'domestic',planningSize:4},
+  {code:'A320neo',range:'domestic',planningSize:4},
+  {code:'A321neo',range:'domestic',planningSize:5},
+  {code:'B787-8',range:'international',planningSize:1},
+  {code:'A330-300',range:'international',planningSize:1},
+  {code:'Concorde',range:'international',planningSize:1},
+  {code:'B787-9',range:'international',planningSize:2},
+  {code:'A330-800',range:'international',planningSize:2},
+  {code:'A350-900',range:'international',planningSize:2},
+  {code:'DC-10',range:'international',planningSize:2},
+  {code:'B787-10',range:'international',planningSize:3},
+  {code:'A330-900',range:'international',planningSize:3},
+  {code:'A340-500',range:'international',planningSize:3},
+  {code:'A350-1000',range:'international',planningSize:3},
+  {code:'B777-300ER',range:'international',planningSize:4},
+  {code:'B747-400',range:'international',planningSize:4},
+  {code:'B747-8i',range:'international',planningSize:5},
+  {code:'A380-800',range:'international',planningSize:5}
 ];
 
 export const FARE_FAMILIES={
@@ -72,41 +87,168 @@ export const FARE_FAMILIES={
     {id:'economy-standard',cabin:'economy',name:'Economy Standard',multiplier:1,mileageFactor:1,seatRule:'standard-included'},
     {id:'economy-flex',cabin:'economy',name:'Economy Flex',multiplier:1.24,mileageFactor:1.2,seatRule:'front-included'}
   ],
-  premium:[
-    {id:'premium-standard',cabin:'premium',name:'Premium Standard',multiplier:1.58,mileageFactor:1.2,seatRule:'standard-included'},
-    {id:'premium-flex',cabin:'premium',name:'Premium Flex',multiplier:1.88,mileageFactor:1.5,seatRule:'all-included'}
+  business:[
+    {id:'business-standard',cabin:'business',name:'Business Standard',multiplier:1.58,mileageFactor:1.2,seatRule:'all-included'},
+    {id:'business-flex',cabin:'business',name:'Business Flex',multiplier:1.88,mileageFactor:1.5,seatRule:'all-included'}
+  ],
+  first:[
+    {id:'first-standard',cabin:'first',name:'First Standard',multiplier:2.65,mileageFactor:2,seatRule:'all-included'},
+    {id:'first-flex',cabin:'first',name:'First Flex',multiplier:3.05,mileageFactor:2.5,seatRule:'all-included'}
   ]
 };
 
-/* Temporary visual layouts. Replace only this block when official class layouts arrive. */
-const TEMPORARY_LAYOUTS={
-  regional:{
-    economy:{firstRow:5,lastRow:22,letters:['A','B','C','D'],aisles:[2],frontRows:[5,6],extraRows:[12]},
-    premium:{firstRow:1,lastRow:3,letters:['A','C','D','F'],aisles:[2],frontRows:[1],extraRows:[]}
+function cabinLayout(seatCount,firstRow,letters,aisles,options={}){
+  return {
+    seatCount,firstRow,letters,aisles,
+    partialLetters:options.partialLetters||[],
+    frontRows:options.frontRows||0,
+    extraRows:options.extraRows||[]
+  };
+}
+
+const LAYOUT_LETTERS={
+  oneTwo:['A','C','D'],
+  twoTwo:['A','B','C','D'],
+  twoThree:['A','C','D','E','F'],
+  threeThree:['A','B','C','D','E','F'],
+  firstTwo:['A','K'],
+  firstThree:['A','D','K'],
+  firstFour:['A','D','G','K'],
+  businessSix:['A','C','D','G','H','K'],
+  economyEight:['A','C','D','E','F','G','H','K'],
+  economyNine:['A','B','C','D','E','F','H','J','K'],
+  economyTen:['A','B','C','D','E','F','G','H','J','K'],
+  dcNine:['A','C','D','E','F','G','H','J','K']
+};
+
+const A330_LAYOUT={
+  first:cabinLayout(6,1,LAYOUT_LETTERS.firstTwo,[1]),
+  business:cabinLayout(60,5,LAYOUT_LETTERS.businessSix,[2,4]),
+  economy:cabinLayout(60,20,LAYOUT_LETTERS.economyEight,[2,6],{
+    partialLetters:['A','C','H','K'],frontRows:2,extraRows:[24]
+  })
+};
+
+const AIRCRAFT_LAYOUTS={
+  'ERJ-145':{
+    economy:cabinLayout(9,1,LAYOUT_LETTERS.oneTwo,[1],{frontRows:1,extraRows:[2]})
   },
-  single:{
-    economy:{firstRow:7,lastRow:30,letters:['A','B','C','D','E','F'],aisles:[3],frontRows:[7,8,9],extraRows:[12,13]},
-    premium:{firstRow:1,lastRow:4,letters:['A','C','D','F'],aisles:[2],frontRows:[1],extraRows:[]}
+  CRJ200:{
+    economy:cabinLayout(12,1,LAYOUT_LETTERS.twoTwo,[2],{frontRows:1,extraRows:[2]})
   },
-  'single-long':{
-    economy:{firstRow:7,lastRow:36,letters:['A','B','C','D','E','F'],aisles:[3],frontRows:[7,8,9],extraRows:[12,13,27]},
-    premium:{firstRow:1,lastRow:5,letters:['A','C','D','F'],aisles:[2],frontRows:[1],extraRows:[]}
+  Q400:{
+    economy:cabinLayout(26,1,LAYOUT_LETTERS.twoTwo,[2],{
+      partialLetters:['A','D'],frontRows:1,extraRows:[4]
+    })
   },
-  'wide-eight':{
-    economy:{firstRow:15,lastRow:43,letters:['A','B','C','D','E','F','G','H'],aisles:[2,6],frontRows:[15,16,17],extraRows:[20,30]},
-    premium:{firstRow:1,lastRow:7,letters:['A','C','D','F'],aisles:[2],frontRows:[1],extraRows:[]}
+  E175:{
+    economy:cabinLayout(22,1,LAYOUT_LETTERS.twoTwo,[2],{
+      partialLetters:['A','D'],frontRows:1,extraRows:[3]
+    })
   },
-  'wide-nine':{
-    economy:{firstRow:16,lastRow:48,letters:['A','B','C','D','E','F','G','H','J'],aisles:[3,6],frontRows:[16,17,18],extraRows:[20,31]},
-    premium:{firstRow:1,lastRow:8,letters:['A','C','D','F'],aisles:[2],frontRows:[1],extraRows:[]}
+  'B717-200':{
+    economy:cabinLayout(32,1,LAYOUT_LETTERS.twoThree,[2],{
+      partialLetters:['A','F'],frontRows:1,extraRows:[4]
+    })
   },
-  'wide-ten':{
-    economy:{firstRow:18,lastRow:52,letters:['A','B','C','D','E','F','G','H','J','K'],aisles:[3,7],frontRows:[18,19,20],extraRows:[23,36]},
-    premium:{firstRow:1,lastRow:9,letters:['A','C','D','F'],aisles:[2],frontRows:[1],extraRows:[]}
+  'BAe 146':{
+    economy:cabinLayout(48,1,LAYOUT_LETTERS.threeThree,[3],{frontRows:2,extraRows:[5]})
   },
-  'wide-ten-long':{
-    economy:{firstRow:20,lastRow:65,letters:['A','B','C','D','E','F','G','H','J','K'],aisles:[3,7],frontRows:[20,21,22],extraRows:[25,40,55]},
-    premium:{firstRow:1,lastRow:12,letters:['A','C','D','F'],aisles:[2],frontRows:[1,2],extraRows:[]}
+  'A220-300':{
+    economy:cabinLayout(76,1,LAYOUT_LETTERS.twoThree,[2],{
+      partialLetters:['A'],frontRows:2,extraRows:[8]
+    })
+  },
+  'B737-800':{
+    economy:cabinLayout(76,1,LAYOUT_LETTERS.threeThree,[3],{
+      partialLetters:['A','B','E','F'],frontRows:2,extraRows:[6]
+    })
+  },
+  A320neo:{
+    economy:cabinLayout(88,1,LAYOUT_LETTERS.threeThree,[3],{
+      partialLetters:['A','B','E','F'],frontRows:2,extraRows:[7]
+    })
+  },
+  A321neo:{
+    economy:cabinLayout(96,1,LAYOUT_LETTERS.threeThree,[3],{frontRows:2,extraRows:[8,13]})
+  },
+  'B787-8':{
+    first:cabinLayout(6,1,LAYOUT_LETTERS.firstTwo,[1]),
+    business:cabinLayout(60,5,LAYOUT_LETTERS.businessSix,[2,4]),
+    economy:cabinLayout(42,20,LAYOUT_LETTERS.economyNine,[3,6],{
+      partialLetters:['A','B','C','H','J','K'],frontRows:2,extraRows:[23]
+    })
+  },
+  'B787-9':{
+    first:cabinLayout(9,1,LAYOUT_LETTERS.firstThree,[1,2]),
+    business:cabinLayout(54,5,LAYOUT_LETTERS.businessSix,[2,4]),
+    economy:cabinLayout(66,20,LAYOUT_LETTERS.economyNine,[3,6],{
+      partialLetters:['A','E','K'],frontRows:2,extraRows:[24]
+    })
+  },
+  'B787-10':{
+    first:cabinLayout(15,1,LAYOUT_LETTERS.firstThree,[1,2]),
+    business:cabinLayout(54,7,LAYOUT_LETTERS.businessSix,[2,4]),
+    economy:cabinLayout(78,20,LAYOUT_LETTERS.economyNine,[3,6],{
+      partialLetters:['A','B','C','H','J','K'],frontRows:2,extraRows:[25]
+    })
+  },
+  'A330-300':A330_LAYOUT,
+  'A330-800':A330_LAYOUT,
+  'A330-900':A330_LAYOUT,
+  'A340-500':{
+    first:cabinLayout(9,1,LAYOUT_LETTERS.firstThree,[1,2]),
+    business:cabinLayout(66,5,LAYOUT_LETTERS.businessSix,[2,4]),
+    economy:cabinLayout(72,20,LAYOUT_LETTERS.economyNine,[3,6],{frontRows:2,extraRows:[25]})
+  },
+  'B777-300ER':{
+    first:cabinLayout(6,1,LAYOUT_LETTERS.firstTwo,[1]),
+    business:cabinLayout(54,5,LAYOUT_LETTERS.businessSix,[2,4]),
+    economy:cabinLayout(119,20,LAYOUT_LETTERS.economyTen,[3,7],{
+      partialLetters:['A','B','C','D','E','G','H','J','K'],frontRows:2,extraRows:[26,32]
+    })
+  },
+  'A350-900':{
+    first:cabinLayout(9,1,LAYOUT_LETTERS.firstThree,[1,2]),
+    business:cabinLayout(60,5,LAYOUT_LETTERS.businessSix,[2,4]),
+    economy:cabinLayout(60,20,LAYOUT_LETTERS.economyNine,[3,6],{
+      partialLetters:['A','B','C','H','J','K'],frontRows:2,extraRows:[24]
+    })
+  },
+  'A350-1000':{
+    first:cabinLayout(15,1,LAYOUT_LETTERS.firstThree,[1,2]),
+    business:cabinLayout(60,7,LAYOUT_LETTERS.businessSix,[2,4]),
+    economy:cabinLayout(72,20,LAYOUT_LETTERS.economyNine,[3,6],{frontRows:2,extraRows:[25]})
+  },
+  'B747-400':{
+    first:cabinLayout(6,1,LAYOUT_LETTERS.firstTwo,[1]),
+    business:cabinLayout(40,5,LAYOUT_LETTERS.firstFour,[1,3]),
+    economy:cabinLayout(175,20,LAYOUT_LETTERS.economyTen,[3,7],{
+      partialLetters:['A','B','F','J','K'],frontRows:2,extraRows:[27,34]
+    })
+  },
+  'B747-8i':{
+    first:cabinLayout(15,1,LAYOUT_LETTERS.firstThree,[1,2]),
+    business:cabinLayout(58,7,LAYOUT_LETTERS.firstFour,[1,3],{partialLetters:['A','K']}),
+    economy:cabinLayout(168,25,LAYOUT_LETTERS.economyTen,[3,7],{
+      partialLetters:['A','B','C','D','G','H','J','K'],frontRows:2,extraRows:[31,38]
+    })
+  },
+  'A380-800':{
+    first:cabinLayout(12,1,LAYOUT_LETTERS.firstFour,[1,3]),
+    business:cabinLayout(60,5,LAYOUT_LETTERS.firstFour,[1,3]),
+    economy:cabinLayout(224,25,LAYOUT_LETTERS.economyTen,[3,7],{
+      partialLetters:['A','B','J','K'],frontRows:2,extraRows:[32,40]
+    })
+  },
+  Concorde:{
+    economy:cabinLayout(136,1,LAYOUT_LETTERS.twoTwo,[2],{frontRows:2,extraRows:[10,20]})
+  },
+  'DC-10':{
+    business:cabinLayout(24,1,LAYOUT_LETTERS.businessSix,[2,4]),
+    economy:cabinLayout(119,10,LAYOUT_LETTERS.dcNine,[2,7],{
+      partialLetters:['A','K'],frontRows:2,extraRows:[16]
+    })
   }
 };
 
@@ -192,7 +334,10 @@ function aircraftFor(flight,route){
   const range=route.kind==='domestic'?'domestic':'international';
   const eligible=PASSENGER_FLEET.filter(aircraft=>aircraft.range===range);
   const tier=Math.max(1,Math.min(5,route.demandBand+assignmentShift(flight)));
-  return eligible.find(aircraft=>aircraft.planningSize>=tier)||eligible.at(-1);
+  const exactTier=eligible.filter(aircraft=>aircraft.planningSize===tier);
+  const pool=exactTier.length?exactTier:eligible;
+  const index=stableNumber(flight.number+flight.dateISO+route.destination)%pool.length;
+  return pool[index];
 }
 
 export function forecastOperation(flight){
@@ -238,16 +383,33 @@ export function quoteFare(flight,familyId,passengerCount=1){
   };
 }
 
+export function aircraftCabins(aircraftCode){
+  const layout=AIRCRAFT_LAYOUTS[aircraftCode];
+  return ['economy','business','first'].filter(cabin=>layout?.[cabin]);
+}
+
 export function seatLayout(aircraftCode,cabin='economy'){
-  const aircraft=PASSENGER_FLEET.find(item=>item.code===aircraftCode);
-  const config=aircraft&&TEMPORARY_LAYOUTS[aircraft.layout]?.[cabin];
+  const config=AIRCRAFT_LAYOUTS[aircraftCode]?.[cabin];
   if(!config)return [];
+  const fullRows=Math.floor(config.seatCount/config.letters.length);
+  const remainder=config.seatCount%config.letters.length;
+  const rowCount=fullRows+(remainder?1:0);
   const result=[];
-  for(let row=config.firstRow;row<=config.lastRow;row++){
-    const type=config.extraRows.includes(row)?'extraLegroom':config.frontRows.includes(row)?'front':'standard';
-    config.letters.forEach((letter,index)=>result.push({
-      id:String(row)+letter,row,letter,type,aisleBefore:config.aisles.includes(index)
-    }));
+  for(let offset=0;offset<rowCount;offset++){
+    const row=config.firstRow+offset;
+    const isPartial=remainder>0&&offset===rowCount-1;
+    const rowLetters=isPartial
+      ?(config.partialLetters.length===remainder?config.partialLetters:config.letters.slice(0,remainder))
+      :config.letters;
+    const type=config.extraRows.includes(row)
+      ?'extraLegroom'
+      :offset<config.frontRows?'front':'standard';
+    rowLetters.forEach((letter,index)=>{
+      const fullIndex=config.letters.indexOf(letter);
+      const previousIndex=index?config.letters.indexOf(rowLetters[index-1]):-1;
+      const aisleBefore=index>0&&config.aisles.some(aisle=>aisle>previousIndex&&aisle<=fullIndex);
+      result.push({id:String(row)+letter,row,letter,type,aisleBefore});
+    });
   }
   return result;
 }
@@ -277,6 +439,7 @@ export function occupiedSeats(aircraftCode,cabin,seed){
 }
 
 export function seatSelectionFee(kind,familyId,seatType){
+  if(familyId.startsWith('business-')||familyId.startsWith('first-'))return 0;
   const international=kind==='international';
   const fees=international
     ?{standard:15000,front:45000,extraLegroom:90000}

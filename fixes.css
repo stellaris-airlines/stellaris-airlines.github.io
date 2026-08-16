@@ -20,3 +20,17 @@
     min-height:36px;
   }
 }
+
+/* Optically center the passenger age help circles beside their labels. */
+.passenger-type-label .help-dot{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  flex:0 0 23px;
+  width:23px;
+  height:23px;
+  padding:0;
+  line-height:1;
+  text-align:center;
+  transform:translateY(2px);
+}

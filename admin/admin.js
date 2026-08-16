@@ -14,12 +14,24 @@ const noticeForm=document.querySelector('[data-notice-form]');
 const noticeList=document.querySelector('[data-admin-notice-list]');
 const cancelButton=document.querySelector('[data-notice-cancel]');
 let unsubscribeNotices=null;
+let currentAdmin=null;
 
 function status(message,type=''){
-  if(!statusBox)return;statusBox.textContent=message;statusBox.className='admin-status'+(type?' '+type:'');
+  if(!statusBox)return;
+  statusBox.textContent=message;
+  statusBox.className='admin-status'+(type?' '+type:'');
+}
+function errorText(error){
+  const code=String(error?.code||'').replace(/^firestore\//,'');
+  const message=String(error?.message||'').trim();
+  return [code,message].filter(Boolean).join(' · ');
 }
 function isAdmin(user){
   return Boolean(user&&ADMIN_EMAILS.has(String(user.email||'').toLowerCase()));
+}
+function defaultAuthor(user=currentAdmin){
+  const display=String(user?.displayName||'').trim();
+  return display&&display.length<=50?display:'STELLARIS AIRLINES';
 }
 async function loadBanner(){
   try{
@@ -34,11 +46,15 @@ async function loadBanner(){
     bannerForm.elements.text.value=data.text||'';
     bannerForm.elements.linkLabel.value=data.linkLabel||'';
     bannerForm.elements.linkUrl.value=data.linkUrl||'';
-  }catch(error){status('배너 설정을 불러오지 못했습니다. Firestore 권한을 확인해 주세요.','error');}
+  }catch(error){
+    console.error('Banner load failed',error);
+    status(`배너 설정을 불러오지 못했습니다.${errorText(error)?' '+errorText(error):''}`,'error');
+  }
 }
 function resetNoticeForm(){
   noticeForm.reset();
   noticeForm.elements.category.value='일반';
+  noticeForm.elements.author.value=defaultAuthor();
   noticeForm.elements.noticeId.value='';
   noticeForm.querySelector('[data-notice-submit]').textContent='공지 등록';
   cancelButton.hidden=true;
@@ -60,7 +76,7 @@ function renderNotices(items){
     edit.addEventListener('click',()=>{
       noticeForm.elements.noticeId.value=item.id;
       noticeForm.elements.category.value=item.category==='중요'||item.pinned?'중요':'일반';
-      noticeForm.elements.author.value=item.author||'';
+      noticeForm.elements.author.value=item.author||defaultAuthor();
       noticeForm.elements.title.value=item.title||'';
       noticeForm.elements.body.value=item.body||'';
       noticeForm.querySelector('[data-notice-submit]').textContent='수정 저장';
@@ -70,8 +86,13 @@ function renderNotices(items){
     const remove=document.createElement('button');remove.type='button';remove.className='admin-mini-btn danger';remove.textContent='삭제';
     remove.addEventListener('click',async()=>{
       if(!window.confirm('이 공지사항을 삭제할까요?'))return;
-      try{await deleteDoc(doc(db,'notices',item.id));status('공지사항을 삭제했습니다.','success');}
-      catch(error){status('공지사항 삭제에 실패했습니다.','error');}
+      try{
+        await deleteDoc(doc(db,'notices',item.id));
+        status('공지사항을 삭제했습니다.','success');
+      }catch(error){
+        console.error('Notice delete failed',error);
+        status(`공지사항 삭제에 실패했습니다.${errorText(error)?' '+errorText(error):''}`,'error');
+      }
     });
     actions.append(edit,remove);article.append(content,actions);noticeList.append(article);
   });
@@ -80,7 +101,10 @@ function watchNotices(){
   if(unsubscribeNotices)unsubscribeNotices();
   unsubscribeNotices=onSnapshot(query(collection(db,'notices'),orderBy('publishedAt','desc')),snapshot=>{
     renderNotices(snapshot.docs.map(item=>({id:item.id,...item.data()})));
-  },()=>status('공지사항 목록을 불러오지 못했습니다. Firestore 권한을 확인해 주세요.','error'));
+  },error=>{
+    console.error('Notice list failed',error);
+    status(`공지사항 목록을 불러오지 못했습니다.${errorText(error)?' '+errorText(error):''}`,'error');
+  });
 }
 
 bannerForm?.addEventListener('submit',async event=>{
@@ -92,33 +116,73 @@ bannerForm?.addEventListener('submit',async event=>{
     linkUrl:bannerForm.elements.linkUrl.value.trim(),
     updatedAt:serverTimestamp()
   };
-  try{await setDoc(doc(db,'siteContent','homeBanner'),data,{merge:true});status('홈페이지 상단 배너를 저장했습니다.','success');}
-  catch(error){status('배너 저장에 실패했습니다. Firestore 쓰기 권한을 확인해 주세요.','error');}
+  try{
+    await setDoc(doc(db,'siteContent','homeBanner'),data,{merge:true});
+    status('홈페이지 상단 배너를 저장했습니다.','success');
+  }catch(error){
+    console.error('Banner save failed',error);
+    status(`배너 저장에 실패했습니다.${errorText(error)?' '+errorText(error):''}`,'error');
+  }
 });
 
 noticeForm?.addEventListener('submit',async event=>{
   event.preventDefault();
+  if(!currentAdmin||!isAdmin(currentAdmin)){
+    status('관리자 인증이 만료되었습니다. 다시 로그인해 주세요.','error');
+    return;
+  }
   const id=noticeForm.elements.noticeId.value.trim();
   const category=noticeForm.elements.category.value==='중요'?'중요':'일반';
+  const author=noticeForm.elements.author.value.trim()||defaultAuthor();
+  const title=noticeForm.elements.title.value.trim();
+  const body=noticeForm.elements.body.value.trim();
+  noticeForm.elements.author.value=author;
+  if(!title||!body){
+    status('제목과 본문을 모두 입력해 주세요.','error');
+    return;
+  }
   const payload={
     category,
-    author:noticeForm.elements.author.value.trim(),
-    title:noticeForm.elements.title.value.trim(),
-    body:noticeForm.elements.body.value.trim(),
+    author,
+    title,
+    body,
     pinned:category==='중요',
     updatedAt:serverTimestamp()
   };
-  if(!payload.author||!payload.title||!payload.body)return;
+  const submitButton=noticeForm.querySelector('[data-notice-submit]');
+  const oldLabel=submitButton.textContent;
+  submitButton.disabled=true;
+  submitButton.textContent=id?'저장 중…':'등록 중…';
+  status('공지사항을 저장하고 있습니다.');
   try{
-    if(id){await updateDoc(doc(db,'notices',id),payload);status('공지사항을 수정했습니다.','success');}
-    else{await addDoc(collection(db,'notices'),{...payload,publishedAt:serverTimestamp()});status('공지사항을 등록했습니다.','success');}
+    if(id){
+      await updateDoc(doc(db,'notices',id),payload);
+      status('공지사항을 수정했습니다.','success');
+    }else{
+      await addDoc(collection(db,'notices'),{...payload,publishedAt:serverTimestamp()});
+      status('공지사항을 등록했습니다.','success');
+    }
     resetNoticeForm();
-  }catch(error){status('공지사항 저장에 실패했습니다. Firestore 쓰기 권한을 확인해 주세요.','error');}
+  }catch(error){
+    console.error('Notice save failed',error);
+    const detail=errorText(error);
+    if(String(error?.code||'').includes('permission-denied')){
+      status(`공지사항 저장 권한이 거부되었습니다. Firebase Firestore Rules가 최신인지 확인해 주세요.${detail?' '+detail:''}`,'error');
+    }else{
+      status(`공지사항 저장에 실패했습니다.${detail?' '+detail:''}`,'error');
+    }
+  }finally{
+    submitButton.disabled=false;
+    if(noticeForm.elements.noticeId.value.trim())submitButton.textContent='수정 저장';
+    else submitButton.textContent='공지 등록';
+    if(oldLabel==='수정 저장'&&noticeForm.elements.noticeId.value.trim())submitButton.textContent=oldLabel;
+  }
 });
 cancelButton?.addEventListener('click',resetNoticeForm);
 
 onAuthStateChanged(auth,user=>{
-  const allowed=isAdmin(user);
+  currentAdmin=isAdmin(user)?user:null;
+  const allowed=Boolean(currentAdmin);
   if(!allowed){
     consoleHost.hidden=true;gate.hidden=false;
     gate.innerHTML=user
@@ -127,6 +191,7 @@ onAuthStateChanged(auth,user=>{
     return;
   }
   gate.hidden=true;consoleHost.hidden=false;
+  resetNoticeForm();
   status(`관리자 계정으로 접속했습니다: ${user.email||user.uid}`,'success');
   void loadBanner();watchNotices();
 });

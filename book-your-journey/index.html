@@ -43,7 +43,7 @@
               <label><span data-label-departure>출발일</span><input id="departureDate" type="date" required></label>
               <label id="returnField"><span data-label-return>귀국일</span><input id="returnDate" type="date" required></label>
               <div class="booking-field passenger-field"><span data-label-passengers>탑승객</span><input id="passengerCount" type="hidden" value="1"><button class="passenger-picker-button" id="passengerPickerButton" type="button" aria-haspopup="dialog"><span data-passenger-summary>성인 1명</span><span aria-hidden="true">⌄</span></button></div>
-              <label><span data-label-cabin>여행 클래스</span><select id="cabinClass"><option value="economy">Economy (Y)</option><option value="business">Business (C)</option><option value="first">First (F)</option></select></label>
+              <label><span data-label-cabin>여행 클래스</span><select id="cabinClass"><option value="first">셀레스티아 퍼스트</option><option value="business">아스렐리스 비즈니스</option><option value="premium">루미나 프리미엄 이코노미</option><option value="economy" selected>노바 이코노미</option></select></label>
             </div>
             <button class="btn btn-olive wide" id="searchFlightsButton" type="submit">항공권 검색</button>
           </form>
@@ -145,6 +145,7 @@
   <div id="siteFooter"></div>
   <script src="../app.js"></script>
   <script type="module" src="booking.js?v=20260816-seat-selection-v3"></script>
+  <script type="module" src="cabin-branding.js?v=20260816-cabin-brands-v1"></script>
   <script type="module" src="passenger-info.js?v=20260816-passenger-info-v3"></script>
   <script type="module" src="payment-sim.js?v=20260816-demo-payment-v1"></script>
   <script src="booking-l10n.js?v=20260816-i18n-audit-v1"></script>

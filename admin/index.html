@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#a89f52">
+  <title>관리자 | Stellaris Airlines</title>
+  <link rel="icon" href="../assets/stellaris-symbol.png">
+  <link href="https://fonts.googleapis.com/css2?family=Michroma&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles.css">
+  <link rel="stylesheet" href="admin.css?v=20260816-admin-v1">
+</head>
+<body data-prefix="../" data-page="admin">
+  <div id="siteHeader"></div>
+  <main>
+    <section class="page-hero compact-hero"><div class="shell"><div class="breadcrumbs"><a href="../">홈</a><span>/</span><span>관리자</span></div><div class="page-hero-grid"><div><p class="eyebrow">ADMIN CONSOLE</p><h1>Content<br>control.</h1></div><p>홈페이지 상단 배너와 공지사항을 관리합니다.</p></div></div></section>
+    <section class="content-section white"><div class="shell admin-shell">
+      <div class="admin-gate" data-admin-gate><strong>관리자 확인 중…</strong><p>로그인 상태와 관리자 권한을 확인하고 있습니다.</p></div>
+      <div data-admin-console hidden>
+        <div class="admin-status" data-admin-status></div>
+        <section class="admin-panel"><div class="admin-panel-head"><div><p class="eyebrow">HOME BANNER</p><h2>홈페이지 상단 배너</h2></div><span>Firestore · siteContent/homeBanner</span></div>
+          <form data-banner-form class="admin-form">
+            <label class="check-row"><input type="checkbox" name="active" checked><span>배너 표시</span></label>
+            <label>배너 문구<input type="text" name="text" maxlength="180" required></label>
+            <div class="admin-grid"><label>링크 버튼 문구<input type="text" name="linkLabel" maxlength="40" placeholder="좌석 안내"></label><label>링크 주소<input type="text" name="linkUrl" maxlength="220" placeholder="seats/"></label></div>
+            <button class="btn btn-olive" type="submit">배너 저장</button>
+          </form>
+        </section>
+
+        <section class="admin-panel"><div class="admin-panel-head"><div><p class="eyebrow">NOTICE MANAGER</p><h2>공지사항</h2></div><a href="../notices/" target="_blank" rel="noopener">공개 페이지 보기 →</a></div>
+          <form data-notice-form class="admin-form">
+            <input type="hidden" name="noticeId">
+            <div class="admin-grid"><label>분류<input type="text" name="category" maxlength="30" value="안내"></label><label class="check-row inline-check"><input type="checkbox" name="pinned"><span>중요 공지로 고정</span></label></div>
+            <label>제목<input type="text" name="title" maxlength="120" required></label>
+            <label>본문<textarea name="body" rows="7" maxlength="5000" required></textarea></label>
+            <div class="admin-actions"><button class="btn btn-olive" type="submit" data-notice-submit>공지 등록</button><button class="btn btn-dark" type="button" data-notice-cancel hidden>수정 취소</button></div>
+          </form>
+          <div class="admin-notice-list" data-admin-notice-list><p>공지사항을 불러오고 있습니다…</p></div>
+        </section>
+      </div>
+    </div></section>
+  </main>
+  <div id="siteFooter"></div>
+  <script src="../app.js?v=20260816-admin-v1"></script>
+  <script type="module" src="admin.js?v=20260816-admin-v1"></script>
+</body>
+</html>

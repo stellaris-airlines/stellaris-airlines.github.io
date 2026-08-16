@@ -183,7 +183,14 @@ function bindLanguageControls(){
 
 function bindSiteInteractions(){
   const mobileButton=document.getElementById('mobileMenuButton'),mobileNav=document.getElementById('mobileNav');
-  if(mobileButton&&mobileNav){mobileButton.addEventListener('click',()=>{const open=mobileButton.getAttribute('aria-expanded')==='true';mobileButton.setAttribute('aria-expanded',String(!open));mobileNav.hidden=open;});}
+  if(mobileButton&&mobileNav){
+    const closeMobileNav=()=>{mobileButton.setAttribute('aria-expanded','false');mobileNav.hidden=true;};
+    mobileButton.addEventListener('click',()=>{const open=mobileButton.getAttribute('aria-expanded')==='true';mobileButton.setAttribute('aria-expanded',String(!open));mobileNav.hidden=open;});
+    mobileNav.addEventListener('click',event=>{if(event.target.closest('a'))closeMobileNav();});
+    window.addEventListener('hashchange',closeMobileNav);
+    window.addEventListener('resize',()=>{if(window.innerWidth>900)closeMobileNav();});
+    document.addEventListener('keydown',event=>{if(event.key==='Escape')closeMobileNav();});
+  }
   document.querySelectorAll('.demo-form').forEach(form=>form.addEventListener('submit',e=>{e.preventDefault();let p=form.querySelector('.demo-message');if(!p){p=document.createElement('p');p.className='demo-message';form.appendChild(p)}const source='현재는 웹사이트 UI 데모입니다. 실제 예약·회원 시스템은 추후 연동됩니다.';p.dataset.i18nDynamic=source;p.textContent=translateText(source,currentLanguage);}));
   const reservationTabs=document.querySelectorAll('[data-reservation-tab]');reservationTabs.forEach(btn=>btn.addEventListener('click',()=>{reservationTabs.forEach(x=>x.classList.toggle('active',x===btn));document.querySelectorAll('[data-reservation-panel]').forEach(p=>p.hidden=p.dataset.reservationPanel!==btn.dataset.reservationTab);}));
   const bookingTabs=document.querySelectorAll('[data-booking-tab]');bookingTabs.forEach(btn=>btn.addEventListener('click',()=>{bookingTabs.forEach(x=>x.classList.toggle('active',x===btn));const rf=document.getElementById('returnField');if(rf)rf.hidden=btn.dataset.bookingTab==='oneway';}));

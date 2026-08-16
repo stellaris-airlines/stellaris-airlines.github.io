@@ -22,7 +22,14 @@ function renderTrips(bookings){
   trips.innerHTML=sorted.length?sorted.map(b=>{const s=b.segments?.[0]||{},check=checkInWindow(b),checkLink=b.status==='ticketed'&&check.state==='open'?`<a class="btn btn-olive" href="../check-in/">체크인</a>`:'',passLink=b.checkInStatus==='checked-in'?`<a class="btn btn-dark" href="../boarding-pass/?booking=${encodeURIComponent(b.bookingRef||'')}">탑승권</a>`:'';return `<article class="trip-row"><div class="trip-row-top"><div><div class="trip-route">${escapeHtml(s.origin||b.origin||'')} → ${escapeHtml(s.destination||b.destination||'')}</div><small>${escapeHtml(s.flightNumber||b.flightNumber||'')} · ${escapeHtml(s.date||'')} ${escapeHtml(s.departure||'')}</small></div><span class="service-status ${b.status==='cancelled'?'closed':'ok'}">${bookingStatusLabel(b.status)}</span></div><div class="service-actions"><a class="btn btn-dark" href="../find-your-reservations/">예약 관리</a><a class="btn btn-dark" href="../booking-confirmation/?booking=${encodeURIComponent(b.bookingRef||'')}">예약 확인서</a>${checkLink}${passLink}</div></article>`;}).join(''):'<p class="service-muted">예약 내역이 없습니다.</p>';
 }
 function renderLedger(entries){
-  ledgerHost.innerHTML=entries.length?entries.map(e=>`<tr><td>${asDate(e.updatedAt).toLocaleDateString('ko-KR')}</td><td>${escapeHtml(({pending:'적립 예정',confirmed:'적립 확정',cancelled:'적립 취소',used:'사용'}[e.status]||e.status||'')}</td><td>${escapeHtml(e.bookingRef||'')}</td><td>${e.status==='used'?'-':'+'}${Number(e.amount||0).toLocaleString()}</td></tr>`).join(''):'<tr><td colspan="4">마일리지 원장이 없습니다.</td></tr>';
+  const labels={pending:'적립 예정',confirmed:'적립 확정',cancelled:'적립 취소',used:'사용'};
+  ledgerHost.innerHTML=entries.length
+    ?entries.map(entry=>{
+      const label=labels[entry.status]||entry.status||'';
+      const sign=entry.status==='used'?'-':entry.status==='cancelled'?'':'+';
+      return `<tr><td>${asDate(entry.updatedAt).toLocaleDateString('ko-KR')}</td><td>${escapeHtml(label)}</td><td>${escapeHtml(entry.bookingRef||'')}</td><td>${sign}${Number(entry.amount||0).toLocaleString()}</td></tr>`;
+    }).join('')
+    :'<tr><td colspan="4">마일리지 원장이 없습니다.</td></tr>';
 }
 async function loadProfile(user){
   profileForm.elements.email.value=user.email||'';

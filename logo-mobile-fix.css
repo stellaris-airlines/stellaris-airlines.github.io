@@ -1,59 +1,53 @@
-/* Keep the complete Stellaris brand visible on narrow mobile headers. */
-@media (max-width: 620px) {
-  .site-header .brand {
-    min-width: 0;
-    overflow: visible;
-    gap: 7px;
-  }
-
-  .site-header .brand-symbol-image {
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    width: auto !important;
-    height: 32px !important;
-    flex: 0 0 auto;
-  }
-
-  .site-header .brand-wordmark-image {
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    width: auto !important;
-    height: 11px !important;
-    max-width: 108px !important;
-    object-fit: contain;
-    flex: 0 1 auto;
-  }
+/* Text-only Stellaris brand. Replaces symbol + wordmark images everywhere. */
+.site-header .brand,
+.site-footer .brand{
+  display:inline-flex;
+  align-items:center;
+  min-width:0;
+  overflow:visible;
+  gap:0;
+  color:#6f692d;
+  line-height:1;
 }
 
-@media (max-width: 390px) {
-  .site-header .header-inner {
-    width: calc(100% - 16px);
-    gap: 6px;
-  }
+.site-header .brand-symbol-image,
+.site-header .brand-wordmark-image,
+.site-footer .brand-symbol-image,
+.site-footer .brand-wordmark-image{
+  display:none !important;
+}
 
-  .site-header .brand {
-    gap: 6px;
-  }
+.site-header .brand::before,
+.site-footer .brand::before{
+  content:"STELLARIS";
+  display:block;
+  font-family:"Michroma","Noto Sans KR",system-ui,sans-serif;
+  font-size:28px;
+  font-weight:400;
+  line-height:1;
+  letter-spacing:.13em;
+  white-space:nowrap;
+  color:#6f692d;
+}
 
-  .site-header .brand-symbol-image {
-    height: 30px !important;
-  }
+.site-header .brand:hover::before,
+.site-footer .brand:hover::before{
+  color:#8e873f;
+}
 
-  .site-header .brand-wordmark-image {
-    display: block !important;
-    height: 10px !important;
-    max-width: 92px !important;
-  }
+.site-footer .footer-brand::before{
+  font-size:24px;
+}
 
-  .site-header .language-trigger {
-    min-width: 76px;
-    padding-inline: 7px;
-  }
+@media(max-width:1380px){
+  .site-header .brand::before{font-size:24px;letter-spacing:.12em}
+}
 
-  .site-header .language-current {
-    max-width: 56px;
-    font-size: 9px;
-  }
+@media(max-width:620px){
+  .site-header .brand::before{font-size:20px;letter-spacing:.105em}
+  .site-footer .footer-brand::before{font-size:20px}
+}
+
+@media(max-width:390px){
+  .site-header .brand::before{font-size:18px;letter-spacing:.09em}
 }

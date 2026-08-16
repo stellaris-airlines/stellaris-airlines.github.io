@@ -1,6 +1,6 @@
 import { auth } from './firebase-config.js';
-import './site-content.js?v=20260817-digital-v1';
-import './digital-services.js?v=20260817-digital-v1';
+import './site-content.js?v=20260817-digital-v2';
+import './digital-services.js?v=20260817-digital-v2';
 import {
   browserLocalPersistence,
   onAuthStateChanged,
@@ -69,21 +69,33 @@ function installNoticeShortcut(){
   link.setAttribute('aria-label',label);link.setAttribute('title',label);
 }
 function installExtendedNavigation() {
-  const seatsHref=rootHref('seats/'),noticesHref=rootHref('notices/');
+  const seatsHref=rootHref('seats/');
+  const noticesHref=rootHref('notices/');
+  const checkinHref=rootHref('check-in/');
+  const boardingPassHref=rootHref('boarding-pass/');
+  const myPageHref=rootHref('my-page/');
   const travelMenu=[...document.querySelectorAll('.mega-title strong')].find(el=>el.textContent.trim()==='여행 준비')?.closest('.mega-inner')?.querySelector('.mega-links');
   const supportMenu=[...document.querySelectorAll('.mega-title strong')].find(el=>el.textContent.trim()==='지원 센터')?.closest('.mega-inner')?.querySelector('.mega-links');
   addLinkOnce(travelMenu,seatsHref,'좌석 안내');
-  addLinkOnce(travelMenu,rootHref('check-in/'),'온라인 체크인');
+  addLinkOnce(travelMenu,checkinHref,'온라인 체크인');
+  addLinkOnce(travelMenu,boardingPassHref,'모바일 탑승권');
+  addLinkOnce(travelMenu,myPageHref,'My Page');
   addLinkOnce(supportMenu,noticesHref,'공지사항');
   const mobile=document.getElementById('mobileNav');
   addLinkOnce(mobile,seatsHref,'좌석 안내');
-  addLinkOnce(mobile,rootHref('check-in/'),'온라인 체크인');
-  addLinkOnce(mobile,rootHref('my-page/'),'My Page');
+  addLinkOnce(mobile,checkinHref,'온라인 체크인');
+  addLinkOnce(mobile,boardingPassHref,'모바일 탑승권');
+  addLinkOnce(mobile,myPageHref,'My Page');
   addLinkOnce(mobile,noticesHref,'공지사항');
   const footerColumns=document.querySelectorAll('.footer-columns>div');
   footerColumns.forEach(column=>{
     const title=column.querySelector('strong')?.textContent.trim();
-    if(title==='서비스'){addLinkOnce(column,seatsHref,'좌석 안내');addLinkOnce(column,rootHref('check-in/'),'온라인 체크인');}
+    if(title==='서비스'){
+      addLinkOnce(column,seatsHref,'좌석 안내');
+      addLinkOnce(column,checkinHref,'온라인 체크인');
+      addLinkOnce(column,boardingPassHref,'모바일 탑승권');
+      addLinkOnce(column,myPageHref,'My Page');
+    }
     if(title==='지원')addLinkOnce(column,noticesHref,'공지사항');
   });
   const copyright=document.querySelector('.footer-bottom>span');

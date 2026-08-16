@@ -1,0 +1,122 @@
+/* Stellaris UX fixes: consistent responsive chrome, custom language menu and page readability */
+:root{--olive-text:#6f692d;--olive-hero:#625e29;--muted:#62655f}
+body{overflow-x:hidden}
+
+/* Global readability */
+body{color:var(--ink)}
+.breadcrumbs{color:#686b64;font-weight:500}
+.eyebrow,.quick-panel span,.feature-cards span,.step-grid article>span,.route-card>span,.group-card>strong,.arrow-link,.language-label{color:var(--olive-text)}
+.page-hero{background:var(--paper);color:var(--ink)}
+.page-hero h1{color:var(--ink);font-size:clamp(46px,5.4vw,80px);line-height:1.01}
+.page-hero-grid>p{color:var(--muted);font-weight:500;line-height:1.85}
+
+/* Dark and olive hero surfaces must keep strong contrast */
+.page-hero.dark-page{background:var(--ink)!important;color:#fff}
+.page-hero.olive-page{background:var(--olive-hero)!important;color:#fff}
+.page-hero.dark-page h1,.page-hero.olive-page h1{color:#fff}
+.page-hero.dark-page .page-hero-grid>p,.page-hero.olive-page .page-hero-grid>p{color:rgba(255,255,255,.88)}
+.page-hero.dark-page .breadcrumbs,.page-hero.olive-page .breadcrumbs,.page-hero .breadcrumbs.light{color:rgba(255,255,255,.82)}
+.page-hero.dark-page .eyebrow,.page-hero.olive-page .eyebrow,.eyebrow.light{color:#f0ebbd}
+
+.page-fleets-cargo .page-hero.dark-page h1{color:#fff;text-shadow:0 2px 18px rgba(0,0,0,.22)}
+.page-fleets-cargo .page-hero.dark-page .page-hero-grid>p{color:rgba(255,255,255,.88)}
+.page-fleets-cargo .page-hero.dark-page .breadcrumbs.light{color:rgba(255,255,255,.82)}
+.page-fleets-cargo .page-hero.dark-page .eyebrow.light{color:#f0ebbd}
+.page-byulha-airways .page-hero h1{font-size:clamp(46px,5.4vw,78px);line-height:1.02;letter-spacing:-.045em;max-width:760px;color:var(--ink);overflow-wrap:normal;word-break:keep-all}
+.page-byulha-airways .page-hero-grid>p{color:var(--muted);font-weight:500}
+
+/* Brand olive is an accent surface: use dark text for accessible contrast */
+.header-tools .book-link,.btn-olive{background:var(--olive);color:var(--ink)!important}
+.header-tools .book-link:hover,.btn-olive:hover{background:#b7ae62}
+.upcoming,.cargo-cta{background:var(--olive);color:var(--ink)}
+.upcoming p{color:rgba(21,23,21,.76)}
+.cargo-cta a,.cargo-cta h2{color:var(--ink)}
+
+/* Home hero: darker olive surface keeps the requested palette but fixes white-text contrast */
+.home-hero{background:var(--olive-hero);color:#fff;overflow:visible}
+.home-hero .hero-copy h1{color:#fff;font-size:clamp(52px,5.7vw,86px);line-height:1}
+.home-hero .hero-copy>p{color:rgba(255,255,255,.9);font-weight:500}
+.home-hero .text-link.light{color:#fff;text-decoration-color:rgba(255,255,255,.6)}
+.home-hero+.content-section{padding-top:170px}
+.quick-panel{z-index:20}
+.home-hero .hero-brand-mark{position:relative;min-height:390px;display:block}
+.home-hero .hero-brand-mark img{display:none}
+.home-hero .hero-brand-mark::before{content:"";position:absolute;inset:48px 0 28px 20px;background-repeat:no-repeat;background-position:center;background-size:contain;opacity:.9;filter:drop-shadow(0 28px 35px rgba(31,29,9,.14));background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 720 360'%3E%3Cpath d='M76 193L284 151 388 41c13-14 36-17 51-7l7 5-73 112 213-31c20-3 39 3 53 17l10 10-267 73 75 87-35 11-112-75-132 39c-29 9-59 3-83-15l-18-14 90-60z' fill='%23ffffff' fill-opacity='.94'/%3E%3Cpath d='M251 196c81-40 165-78 250-114' fill='none' stroke='%23ffffff' stroke-opacity='.5' stroke-width='3' stroke-linecap='round'/%3E%3Ccircle cx='521' cy='73' r='7' fill='%23ffffff' fill-opacity='.95'/%3E%3C/svg%3E")}
+.home-hero .hero-brand-mark::after{content:"";position:absolute;width:520px;height:520px;border:1px solid rgba(255,255,255,.22);border-radius:50%;right:-120px;top:-80px;pointer-events:none}
+
+/* Dark sections: keep secondary text readable */
+.dark-section .promise-grid p,.dark-section .promise-list p,.light-copy{color:rgba(255,255,255,.78)}
+.dark-section .eyebrow,.dark-section .eyebrow.light{color:#f0ebbd}
+
+/* Cards and long-form text */
+.body-copy,.feature-cards p,.fleet-item p,.group-lead p:last-child,.group-card>p:not(.eyebrow),.step-grid p,.step-grid li,.safety-grid p,.safety-grid li,.wifi-card p,.note,.route-card h3 small,.route-card p,.stat-grid p,.section-head>p{color:var(--muted)}
+.lead-copy{color:var(--ink)}
+
+.header-inner{grid-template-columns:minmax(220px,285px) minmax(0,1fr) auto;gap:18px}
+.main-nav{gap:22px;min-width:0}
+.nav-item>a{font-size:13px}
+.header-tools{gap:9px;min-width:0}
+.header-tools .book-link{padding:10px 13px}
+.brand-symbol-image,.brand-wordmark-image{object-fit:contain;object-position:center}
+.brand-symbol-image{max-height:50px}
+.brand-wordmark-image{max-width:210px}
+.signup-link{font-weight:700}
+
+.language-switcher{position:relative;display:inline-flex;align-items:center;height:40px;z-index:420}
+.language-trigger{height:40px;min-width:145px;display:flex;align-items:center;justify-content:flex-start;gap:9px;padding:0 12px;border:1px solid rgba(21,23,21,.2);background:#fff;color:var(--ink);cursor:pointer;transition:border-color .18s ease,box-shadow .18s ease,background .18s ease}
+.language-trigger:hover,.language-switcher.is-open .language-trigger{border-color:var(--olive-text);box-shadow:0 0 0 3px rgba(168,159,82,.12)}
+.language-label{font-family:"Michroma",sans-serif;font-size:7px;letter-spacing:.14em;flex:0 0 auto}
+.language-current{font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:98px}
+.language-chevron{width:7px;height:7px;border-right:1.5px solid var(--ink);border-bottom:1.5px solid var(--ink);transform:rotate(45deg) translateY(-2px);margin-left:auto;transition:transform .18s ease}
+.language-switcher.is-open .language-chevron{transform:rotate(225deg) translate(-2px,-1px)}
+.language-menu{position:absolute;right:0;top:calc(100% + 9px);width:210px;padding:7px;background:#fff;border:1px solid rgba(21,23,21,.16);box-shadow:0 20px 55px rgba(20,21,18,.16);z-index:500}
+.language-menu::before{content:"";position:absolute;right:18px;top:-5px;width:9px;height:9px;background:#fff;border-left:1px solid rgba(21,23,21,.16);border-top:1px solid rgba(21,23,21,.16);transform:rotate(45deg)}
+.language-option{position:relative;width:100%;height:40px;border:0;background:transparent;display:flex;align-items:center;padding:0 34px 0 13px;text-align:left;font-size:12px;color:var(--ink);cursor:pointer;transition:background .15s ease,color .15s ease}
+.language-option:hover{background:var(--paper)}
+.language-option.is-selected{background:rgba(168,159,82,.17);color:var(--olive-text);font-weight:800}
+.language-option.is-selected::after{content:"";position:absolute;right:14px;width:7px;height:7px;border-radius:50%;background:var(--olive-text)}
+
+.auth-shell{min-height:calc(100vh - 88px);background:var(--paper);padding:90px 0 120px}
+.auth-single{width:min(560px,calc(100% - 40px));margin:0 auto;background:#fff;border:1px solid var(--line);padding:48px 52px;box-shadow:0 24px 70px rgba(20,21,18,.07)}
+.auth-single h1{font-size:46px;letter-spacing:-.045em;margin:5px 0 12px}
+.auth-single .auth-intro{color:var(--muted);line-height:1.8;margin:0 0 34px}
+.auth-single form{display:grid;gap:18px}
+.auth-single label{display:grid;gap:8px;font-size:13px;color:var(--muted)}
+.auth-single input{width:100%;height:58px;border:1px solid rgba(21,23,21,.22);background:#fff;padding:0 16px;color:var(--ink);outline:none}
+.auth-single input:focus{border-color:var(--olive-text);box-shadow:0 0 0 3px rgba(168,159,82,.14)}
+.auth-alt{display:flex;justify-content:space-between;gap:16px;margin-top:22px;padding-top:20px;border-top:1px solid var(--line);font-size:13px}
+.auth-alt a{color:var(--olive-text);font-weight:800}
+.demo-message{margin:6px 0 0;color:var(--olive-text);font-size:12px;line-height:1.6}
+
+.site-footer::after{content:"CONTACT · stellarisairlines@gmail.com";display:block;padding:18px 24px;border-top:1px solid rgba(255,255,255,.16);background:var(--ink);color:rgba(255,255,255,.86);text-align:center;font-family:"Michroma","Noto Sans KR",sans-serif;font-size:10px;letter-spacing:.08em;line-height:1.6}
+
+@media(max-width:1540px){
+  .header-inner{grid-template-columns:minmax(190px,245px) minmax(0,1fr) auto;gap:13px}
+  .main-nav{gap:15px}.nav-item>a{font-size:12px}.header-tools{gap:7px}.header-tools .book-link{padding:9px 10px}
+  .brand-wordmark-image{max-width:170px;height:18px}.brand-symbol-image{height:42px}
+  .language-trigger{min-width:125px;padding:0 9px}.language-label{display:none}.language-current{max-width:96px}
+}
+@media(max-width:1380px){
+  .main-nav{display:none}.mobile-menu-button{display:block}
+  .header-inner{height:74px;grid-template-columns:minmax(170px,1fr) auto;gap:12px}
+  .header-tools>a:not(.book-link),.header-tools .tool-divider{display:none}
+  .mega-menu{top:74px}.mobile-nav{top:74px}
+  .brand-symbol-image{height:42px}.brand-wordmark-image{height:18px;max-width:185px}
+  .language-switcher,.language-trigger{height:36px}
+}
+@media(max-width:820px){
+  .page-hero{padding:76px 0 62px}.page-hero-grid{gap:28px}.page-hero h1{font-size:clamp(42px,10vw,64px)}
+  .home-hero{padding-bottom:90px}.home-hero+.content-section{padding-top:110px}
+  .quick-panel{position:relative;left:auto;bottom:auto;transform:none;margin:50px auto -140px;grid-template-columns:1fr 1fr}
+  .quick-panel a{min-height:105px;padding:20px}.quick-panel a:nth-child(2){border-right:0}
+  .home-hero .hero-brand-mark{min-height:260px}.home-hero .hero-brand-mark::before{inset:10px 0;background-size:92%}.home-hero .hero-brand-mark::after{width:340px;height:340px;right:-140px;top:-30px}
+  .auth-shell{padding:55px 0 80px}.auth-single{padding:36px 28px}.auth-single h1{font-size:38px}
+}
+@media(max-width:620px){
+  .header-inner{grid-template-columns:minmax(120px,1fr) auto}.brand-wordmark-image{display:none}.brand-symbol-image{height:38px}
+  .header-tools .book-link{display:none}.mobile-menu-button{width:38px}
+  .language-trigger{min-width:105px}.language-current{max-width:78px;font-size:10px}.language-menu{right:-45px;width:190px}
+  .quick-panel{grid-template-columns:1fr}.quick-panel a{border-right:0;border-bottom:1px solid var(--line)}
+  .page-byulha-airways .page-hero h1{font-size:46px}
+  .auth-alt{flex-direction:column}
+}

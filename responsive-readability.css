@@ -1,0 +1,268 @@
+/* Stellaris Airlines — global mobile readability layer
+   Loaded after legacy styles/fixes. Keep brand language while making every page easier to read and tap on phones. */
+
+html{
+  -webkit-text-size-adjust:100%;
+  text-size-adjust:100%;
+  max-width:100%;
+  overflow-x:hidden;
+}
+body{
+  max-width:100%;
+  overflow-x:hidden;
+  line-height:1.6;
+}
+@supports (overflow:clip){html,body{overflow-x:clip}}
+
+p,li,dd,dt,small,label,.body-copy,.lead-copy,.section-head>p{
+  overflow-wrap:break-word;
+}
+button,a,input,select,textarea{touch-action:manipulation}
+button,input,select,textarea{max-width:100%}
+:focus-visible{outline:3px solid rgba(111,105,45,.42);outline-offset:3px}
+.btn,.book-link,.mobile-menu-button{min-height:48px}
+
+@media (max-width:900px){
+  :root{--shell:calc(100% - 32px);--wide:calc(100% - 28px)}
+  .shell,.shell-wide{max-width:100%;margin-inline:auto}
+
+  /* Header / navigation */
+  .site-header{position:sticky;top:0;z-index:500}
+  .header-inner{
+    width:calc(100% - 24px);
+    height:68px;
+    grid-template-columns:minmax(0,1fr) auto;
+    gap:8px;
+  }
+  .brand{min-width:0;overflow:hidden;gap:8px}
+  .brand-symbol-image{height:38px;flex:0 0 auto}
+  .brand-wordmark-image{display:block;height:14px;max-width:150px;min-width:0;object-fit:contain}
+  .header-tools{min-width:0;gap:6px}
+  .header-tools .book-link,.header-tools>a:not([data-auth-user]):not([data-auth-logout]){display:none}
+  .header-tools [data-auth-user],.header-tools [data-auth-logout]{display:none!important}
+  .language-switcher,.language-trigger{height:40px}
+  .language-trigger{min-width:104px;padding:0 9px}
+  .language-current{max-width:78px;font-size:11px}
+  .mobile-menu-button{display:block;width:44px;height:44px;flex:0 0 44px;padding:10px}
+  .mobile-menu-button span{height:2px;margin:5px 0}
+  .mobile-nav{
+    position:fixed;
+    top:68px;
+    left:0;
+    right:0;
+    z-index:490;
+    max-height:calc(100dvh - 68px);
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    padding:8px 16px calc(24px + env(safe-area-inset-bottom));
+    background:#fff;
+    border-top:1px solid var(--line);
+    box-shadow:0 22px 45px rgba(20,21,18,.14);
+  }
+  .mobile-nav a{
+    min-height:50px;
+    display:flex;
+    align-items:center;
+    padding:12px 6px;
+    font-size:15px;
+    line-height:1.45;
+  }
+  .language-menu{position:fixed;top:62px;right:12px;width:min(220px,calc(100vw - 24px));max-height:70dvh;overflow-y:auto}
+
+  /* Page heroes */
+  .page-hero,.compact-hero{padding:56px 0 48px}
+  .breadcrumbs{margin-bottom:28px;font-size:12px;line-height:1.5;flex-wrap:wrap}
+  .page-hero-grid{grid-template-columns:minmax(0,1fr);gap:22px;align-items:start}
+  .page-hero h1,
+  .page-byulha-airways .page-hero h1{
+    max-width:100%;
+    font-size:clamp(38px,9.2vw,58px);
+    line-height:1.04;
+    letter-spacing:-.045em;
+    word-break:keep-all;
+    overflow-wrap:anywhere;
+  }
+  .page-hero-grid>p{max-width:680px;font-size:15px;line-height:1.8}
+  .eyebrow{line-height:1.55}
+
+  /* Home hero */
+  .home-hero{
+    min-height:auto;
+    padding:52px 0 34px;
+    overflow:hidden;
+  }
+  .home-hero-grid{
+    grid-template-columns:minmax(0,1fr);
+    min-height:0;
+    gap:18px;
+    align-items:start;
+  }
+  .home-hero .hero-copy{width:100%;min-width:0}
+  .home-hero .hero-copy h1{
+    max-width:100%;
+    font-size:clamp(40px,9vw,60px);
+    line-height:1.03;
+    letter-spacing:-.045em;
+    overflow-wrap:break-word;
+  }
+  .home-hero .hero-copy>p{max-width:680px;font-size:16px;line-height:1.75;margin-top:22px}
+  .hero-actions{flex-wrap:wrap;gap:14px 20px;margin-top:26px}
+  .home-hero .hero-brand-mark{
+    position:absolute;
+    right:-80px;
+    bottom:-30px;
+    width:320px;
+    min-height:210px;
+    opacity:.18;
+    pointer-events:none;
+  }
+  .home-hero .hero-brand-mark::before{inset:0;background-size:contain}
+  .home-hero .hero-brand-mark::after{width:300px;height:300px;right:-80px;top:-40px}
+  .hero-orbit{width:560px;height:560px;right:-380px;top:-210px}
+  .quick-panel{
+    position:relative;
+    left:auto;
+    right:auto;
+    bottom:auto;
+    transform:none;
+    width:var(--shell);
+    margin:34px auto 0;
+    grid-template-columns:1fr 1fr;
+    box-shadow:0 18px 44px rgba(20,21,18,.15);
+  }
+  .quick-panel a{min-height:96px;padding:18px 20px}
+  .quick-panel strong{font-size:17px;margin:8px 0 3px}
+  .quick-panel small{font-size:12px;line-height:1.45}
+  .home-hero+.content-section{padding-top:68px}
+
+  /* Reading rhythm */
+  .content-section{padding:72px 0}
+  .content-title{font-size:clamp(34px,7vw,48px);line-height:1.12}
+  .section-head{align-items:flex-start;flex-direction:column;gap:14px;margin-bottom:30px}
+  .section-head h2{font-size:clamp(31px,6.8vw,44px);line-height:1.15}
+  .section-head>p{margin:0;font-size:14px;line-height:1.75}
+  .lead-copy{font-size:18px;line-height:1.72}
+  .body-copy{font-size:15px;line-height:1.85}
+  .arrow-link{font-size:14px;line-height:1.6}
+
+  /* Layouts that should collapse sooner */
+  .page-hero-grid,
+  .content-grid-2,
+  .content-grid-3,
+  .intro-split,
+  .wifi-card,
+  .group-grid,
+  .step-grid{
+    grid-template-columns:minmax(0,1fr);
+  }
+  .content-grid-2,.intro-split,.wifi-card{gap:36px}
+  .stat-grid,.feature-cards,.safety-grid,.fleet-grid,.route-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .promise-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .promise-grid article{padding:24px 18px 24px 0}
+  .feature-cards>a,.feature-cards>div{padding:24px;min-height:180px}
+  .feature-cards h3{margin-top:26px;font-size:20px;line-height:1.35}
+  .stat-grid article{padding:28px}
+  .stat-grid strong{font-size:44px}
+  .step-grid article,.safety-grid article,.fleet-item,.group-card{padding:26px}
+  .wifi-card{padding:32px}
+  .statement-box{padding:46px 34px}
+  .cargo-cta{align-items:flex-start;flex-direction:column;padding:32px;gap:22px}
+  .category-title{align-items:flex-start;flex-direction:column;gap:8px}
+  .group-lead{padding:34px}
+
+  /* Forms / booking / tables */
+  input,select,textarea{font-size:16px}
+  .form-card,.booking-page-card{padding:28px}
+  .booking-details{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .booking-tabs,.reservation-tabs{scrollbar-width:thin}
+  .seat-map-shell{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .seat-selection-head{gap:20px}
+  .seat-legend{flex-wrap:wrap}
+  .schedule-strip{grid-template-columns:repeat(7,minmax(92px,1fr));overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .region-list div{grid-template-columns:150px minmax(0,1fr);gap:22px}
+
+  /* Footer */
+  .footer-main{grid-template-columns:minmax(0,1fr);gap:36px;padding:42px 0}
+  .footer-columns{grid-template-columns:repeat(2,minmax(0,1fr));gap:28px 22px}
+  .footer-columns a{font-size:13px;line-height:1.55;margin:11px 0}
+  .footer-bottom{gap:16px;align-items:flex-start;flex-direction:column;font-size:11px}
+  .footer-bottom div{flex-wrap:wrap;gap:12px 18px}
+  .site-footer::after{padding:16px;font-size:9px;overflow-wrap:anywhere}
+}
+
+@media (max-width:620px){
+  :root{--shell:calc(100% - 28px);--wide:calc(100% - 24px)}
+  .header-inner{width:calc(100% - 20px)}
+  .brand-symbol-image{height:34px}
+  .brand-wordmark-image{display:block;height:12px;max-width:118px}
+  .language-trigger{min-width:92px}
+  .language-current{max-width:68px;font-size:10px}
+
+  .page-hero,.compact-hero{padding:46px 0 40px}
+  .breadcrumbs{margin-bottom:22px}
+  .page-hero h1,.page-byulha-airways .page-hero h1{font-size:clamp(34px,10.5vw,46px);line-height:1.06}
+  .page-hero-grid>p{font-size:15px;line-height:1.75}
+
+  .home-hero{padding:42px 0 28px}
+  .home-hero .hero-copy h1{font-size:clamp(36px,10.6vw,48px);line-height:1.05}
+  .home-hero .hero-copy>p{font-size:15px;line-height:1.72}
+  .home-hero .hero-brand-mark{display:none}
+  .hero-orbit{opacity:.55}
+  .quick-panel{grid-template-columns:minmax(0,1fr);margin-top:30px}
+  .quick-panel a{min-height:76px;padding:15px 17px;border-right:0;border-bottom:1px solid var(--line)}
+  .quick-panel a:last-child{border-bottom:0}
+  .quick-panel span{font-size:8px}
+  .quick-panel strong{font-size:16px;margin:5px 0 2px}
+  .quick-panel small{display:block;font-size:11px}
+  .home-hero+.content-section{padding-top:56px}
+  .hero-actions{align-items:stretch;flex-direction:column}
+  .hero-actions .btn{width:100%}
+
+  .content-section{padding:56px 0}
+  .content-title{font-size:34px}
+  .section-head h2{font-size:31px}
+  .lead-copy{font-size:17px}
+  .stat-grid,.feature-cards,.safety-grid,.fleet-grid,.route-grid,.promise-grid{grid-template-columns:minmax(0,1fr)}
+  .promise-grid article{padding:22px 0}
+  .feature-cards>a,.feature-cards>div{min-height:0;padding:22px}
+  .stat-grid article{padding:24px}
+  .step-grid article,.safety-grid article,.fleet-item,.group-card{padding:22px}
+  .wifi-card{padding:24px;gap:28px}
+  .wifi-spec{grid-template-columns:minmax(0,1fr)}
+  .statement-box{padding:34px 22px}
+  .statement-box h2{font-size:38px;line-height:1.1}
+  .group-lead{padding:26px}
+  .cargo-cta{padding:26px}
+  .cargo-cta h2{font-size:30px}
+  .category-title h2{font-size:32px}
+
+  .form-card,.booking-page-card{padding:22px 18px}
+  .booking-details{grid-template-columns:minmax(0,1fr)}
+  .booking-tabs,.reservation-tabs{display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .booking-tabs button,.reservation-tabs button{flex:0 0 auto;min-height:48px}
+  .seat-selection-head{align-items:flex-start;flex-direction:column}
+  .region-list div{grid-template-columns:minmax(0,1fr);gap:8px;padding:20px 0}
+
+  .auth-shell{padding:38px 0 60px}
+  .auth-single{width:calc(100% - 28px);padding:28px 20px}
+  .auth-single h1{font-size:34px;line-height:1.12}
+  .auth-single input{height:54px}
+  .auth-alt{gap:10px}
+
+  .footer-main{padding:36px 0}
+  .footer-columns{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:26px 16px}
+}
+
+@media (max-width:390px){
+  :root{--shell:calc(100% - 24px);--wide:calc(100% - 20px)}
+  .brand-wordmark-image{display:none}
+  .language-trigger{min-width:88px}
+  .page-hero h1,.page-byulha-airways .page-hero h1{font-size:34px}
+  .home-hero .hero-copy h1{font-size:35px}
+  .footer-columns{grid-template-columns:minmax(0,1fr)}
+}
+
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}
+}

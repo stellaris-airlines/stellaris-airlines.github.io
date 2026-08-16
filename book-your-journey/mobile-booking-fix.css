@@ -1,0 +1,42 @@
+/* Mobile booking form hardening. Prevent the global .swap rotation rule from stretching the route switch control. */
+@media (max-width: 600px) {
+  .booking-route {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .booking-route > label {
+    min-width: 0;
+  }
+
+  .booking-route .swap {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    justify-self: center;
+    align-self: center;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border-radius: 50%;
+    transform: none !important;
+    font-size: 0;
+    line-height: 1;
+    position: relative;
+    z-index: 2;
+  }
+
+  .booking-route .swap::before {
+    content: "⇅";
+    font-size: 22px;
+    line-height: 1;
+  }
+
+  .booking-form select,
+  .booking-form input {
+    min-width: 0;
+    max-width: 100%;
+  }
+}

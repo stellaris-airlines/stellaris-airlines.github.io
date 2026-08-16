@@ -13,13 +13,13 @@ const logoutElements = () => document.querySelectorAll('[data-auth-logout]');
 const ADMIN_EMAILS = new Set(['stellarisairlines@gmail.com','stellaris.web.dev@gmail.com']);
 
 const accountLabels = {
-  ko: { starMiles: '내 Star Miles 보기', logout: '로그아웃' },
-  'en-US': { starMiles: 'View my Star Miles', logout: 'Log out' },
-  'en-GB': { starMiles: 'View my Star Miles', logout: 'Log out' },
-  'zh-CN': { starMiles: '查看我的 Star Miles', logout: '退出登录' },
-  ja: { starMiles: 'Star Milesを確認', logout: 'ログアウト' },
-  es: { starMiles: 'Ver mis Star Miles', logout: 'Cerrar sesión' },
-  fr: { starMiles: 'Voir mes Star Miles', logout: 'Se déconnecter' }
+  ko: { starMiles: '내 Star Miles 보기', logout: '로그아웃', notices:'공지사항' },
+  'en-US': { starMiles: 'View my Star Miles', logout: 'Log out', notices:'Notices' },
+  'en-GB': { starMiles: 'View my Star Miles', logout: 'Log out', notices:'Notices' },
+  'zh-CN': { starMiles: '查看我的 Star Miles', logout: '退出登录', notices:'公告' },
+  ja: { starMiles: 'Star Milesを確認', logout: 'ログアウト', notices:'お知らせ' },
+  es: { starMiles: 'Ver mis Star Miles', logout: 'Cerrar sesión', notices:'Avisos' },
+  fr: { starMiles: 'Voir mes Star Miles', logout: 'Se déconnecter', notices:'Annonces' }
 };
 
 function currentLanguage() {
@@ -39,12 +39,32 @@ function translateAccountNavigation(lang = currentLanguage()) {
     element.textContent = labels.starMiles;
   });
   logoutElements().forEach((element) => { element.textContent = labels.logout; });
+  document.querySelectorAll('[data-notice-shortcut]').forEach(element=>{
+    element.setAttribute('aria-label',labels.notices);
+    element.setAttribute('title',labels.notices);
+  });
 }
 
 function rootHref(path='') { return new URL(path, import.meta.url).href; }
 function addLinkOnce(host, href, text) {
   if (!host || [...host.querySelectorAll('a')].some(a => a.href === href)) return;
   const link=document.createElement('a');link.href=href;link.textContent=text;host.appendChild(link);
+}
+function installNoticeShortcut(){
+  const tools=document.querySelector('.header-tools');
+  const language=tools?.querySelector('[data-language-switcher]');
+  if(!tools||!language)return;
+  let link=tools.querySelector('[data-notice-shortcut]');
+  if(!link){
+    link=document.createElement('a');
+    link.href=rootHref('notices/');
+    link.className='notice-shortcut';
+    link.dataset.noticeShortcut='true';
+    link.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 13.5V10a1 1 0 0 1 1-1H8l7-3.5v12L8 14H5.5a1 1 0 0 1-1-1Zm3.5.5 1.2 4.1a1 1 0 0 0 1 .7h1.4l-1.5-4.8M17.5 8.5a4.5 4.5 0 0 1 0 6"/></svg><span class="sr-only">공지사항</span>';
+    language.insertAdjacentElement('afterend',link);
+  }
+  const label=(accountLabels[currentLanguage()]||accountLabels.ko).notices;
+  link.setAttribute('aria-label',label);link.setAttribute('title',label);
 }
 function installExtendedNavigation() {
   const seatsHref=rootHref('seats/'),noticesHref=rootHref('notices/');
@@ -63,6 +83,7 @@ function installExtendedNavigation() {
   });
   const copyright=document.querySelector('.footer-bottom>span');
   if(copyright)copyright.textContent='ⓒ 2026 STELLARIS AIRLINES. All rights reserved.';
+  installNoticeShortcut();
 }
 function installAdminLink(user){
   document.querySelectorAll('[data-admin-session-link]').forEach(el=>el.remove());
@@ -90,8 +111,8 @@ function renderUser(user) {
   installAdminLink(user);translateAccountNavigation();installExtendedNavigation();
 }
 
-translateAccountNavigation();
 installExtendedNavigation();
+translateAccountNavigation();
 window.addEventListener('stellaris:languagechange', (event) => {
   translateAccountNavigation(event.detail?.language || currentLanguage());
   queueMicrotask(installExtendedNavigation);

@@ -1,0 +1,32 @@
+/* Destinations page typography: keep Korean words and route names intact when wrapping. */
+.page-destinations :where(p,h1,h2,h3,strong,a,span,small){
+  word-break:keep-all;
+  overflow-wrap:normal;
+}
+
+/* Keep each upcoming airport name/code together; wrap only between route groups. */
+.upcoming strong{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:baseline;
+  gap:0 .28em;
+}
+.upcoming strong .upcoming-route{
+  display:inline-flex;
+  align-items:baseline;
+  gap:.42em;
+  white-space:nowrap;
+}
+.upcoming strong .route-divider{
+  white-space:nowrap;
+}
+.upcoming strong small{
+  flex:0 0 auto;
+}
+
+@media(max-width:620px){
+  .upcoming strong{
+    line-height:1.35;
+    row-gap:.12em;
+  }
+}

@@ -8,14 +8,21 @@ on:
       - "operations-model.js"
       - "auth-session.js"
       - "site-content.js"
+      - "digital-services.js"
+      - "travel-service-core.js"
       - "firebase-config.js"
       - "login/**/*.js"
       - "signup/**/*.js"
       - "flight-information/**/*.js"
       - "book-your-journey/**/*.js"
+      - "find-your-reservations/**/*.js"
       - "view-my-starmiles/**/*.js"
       - "admin/**/*.js"
       - "notices/**/*.js"
+      - "check-in/**/*.js"
+      - "boarding-pass/**/*.js"
+      - "booking-confirmation/**/*.js"
+      - "my-page/**/*.js"
       - "translations.js"
       - "translations-extra.js"
       - ".github/workflows/validate-site-js.yml"
@@ -30,13 +37,20 @@ jobs:
       - name: Check JavaScript syntax
         shell: bash
         run: |
-          node --input-type=module --check < app.js
-          node --input-type=module --check < operations-model.js
-          node --input-type=module --check < auth-session.js
-          node --input-type=module --check < site-content.js
-          node --input-type=module --check < firebase-config.js
-          node --input-type=module --check < translations.js
-          node --input-type=module --check < translations-extra.js
+          for file in app.js operations-model.js auth-session.js site-content.js digital-services.js travel-service-core.js firebase-config.js translations.js translations-extra.js; do
+            node --input-type=module --check < "$file"
+          done
           while IFS= read -r -d '' file; do
             node --input-type=module --check < "$file"
-          done < <(find login signup flight-information book-your-journey view-my-starmiles admin notices -type f -name '*.js' -print0)
+          done < <(find login signup flight-information book-your-journey find-your-reservations view-my-starmiles admin notices check-in boarding-pass booking-confirmation my-page -type f -name '*.js' -print0)
+      - name: Digital service smoke checks
+        shell: bash
+        run: |
+          test -f check-in/index.html
+          test -f boarding-pass/index.html
+          test -f booking-confirmation/index.html
+          test -f my-page/index.html
+          grep -q "출발 예정 시각 24시간 전" check-in/index.html
+          grep -q "data-operation-form" admin/index.html
+          grep -q "data-notice-search" notices/index.html
+          grep -q "digital-services.js" auth-session.js

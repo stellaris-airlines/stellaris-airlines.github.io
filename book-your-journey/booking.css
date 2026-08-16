@@ -91,9 +91,13 @@
 .passenger-dialog-head>button,.ticket-dialog-x{display:grid;place-items:center;width:42px;height:42px;padding:0;border:0;background:transparent;color:#071d70;font-size:34px;line-height:1;cursor:pointer}
 .passenger-type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;padding:34px 0}
 .passenger-type{display:grid;gap:24px;text-align:center}
+.passenger-type-label{position:relative;display:flex;align-items:center;justify-content:center;min-height:32px}
 .passenger-type strong{color:#071d70;font-size:20px}
-.passenger-type small{display:block;margin-top:7px;color:var(--muted);font-size:10px}
-.help-dot{display:inline-grid;place-items:center;width:21px;height:21px;margin-left:6px;border:1px solid #071d70;border-radius:50%;color:#071d70;font-size:12px;font-weight:900}
+.help-dot{display:inline-grid;place-items:center;width:23px;height:23px;margin-left:7px;padding:0;border:1px solid #071d70;border-radius:50%;background:#fff;color:#071d70;font:900 12px/1 inherit;cursor:pointer}
+.help-dot:hover,.help-dot:focus-visible,.help-dot[aria-expanded="true"]{background:#071d70;color:#fff;outline:0}
+.age-tooltip{position:absolute;left:50%;top:calc(100% + 10px);z-index:5;width:max-content;max-width:230px;padding:10px 12px;border-radius:6px;background:#071d70;color:#fff;font-size:11px;font-weight:700;line-height:1.45;text-align:center;box-shadow:0 10px 28px rgba(7,29,112,.24);opacity:0;visibility:hidden;pointer-events:none;transform:translate(-50%,-4px);transition:opacity .16s ease,transform .16s ease,visibility .16s}
+.age-tooltip::before{content:"";position:absolute;left:50%;bottom:100%;border:6px solid transparent;border-bottom-color:#071d70;transform:translateX(-50%)}
+.help-dot:hover+.age-tooltip,.help-dot:focus-visible+.age-tooltip,.help-dot[aria-expanded="true"]+.age-tooltip{opacity:1;visibility:visible;transform:translate(-50%,0)}
 .passenger-counter{display:flex;align-items:center;justify-content:center;gap:22px}
 .passenger-counter button{width:52px;height:52px;border:1px solid var(--line);background:#fff;color:#071d70;font-size:30px;cursor:pointer}
 .passenger-counter button:disabled{background:#f4f4f2;color:#aaa;cursor:not-allowed}

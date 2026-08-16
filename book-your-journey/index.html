@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="booking.css?v=20260816-seat-tooltip-v2">
   <link rel="stylesheet" href="mobile-booking-fix.css?v=20260816-swap-v1">
   <link rel="stylesheet" href="passenger-info.css?v=20260816-passenger-info-v1">
+  <link rel="stylesheet" href="payment-sim.css?v=20260816-demo-payment-v1">
 </head>
 <body data-prefix="../" data-page="book-your-journey">
   <div id="siteHeader"></div>
@@ -90,11 +91,13 @@
 
         <section class="booking-confirm" data-booking-confirm hidden>
           <div data-booking-summary></div>
+          <p class="demo-payment-note" data-demo-payment-note>발권 전 가상 결제 승인이 필요합니다. 실제 금전 거래는 발생하지 않습니다.</p>
           <button class="btn btn-dark" type="button" data-issue-ticket>선택한 여정 발권</button>
         </section>
       </div>
     </section>
   </main>
+
   <div class="passenger-modal" data-passenger-modal hidden>
     <section class="passenger-dialog" role="dialog" aria-modal="true" aria-labelledby="passengerDialogTitle">
       <div class="passenger-dialog-head"><h2 id="passengerDialogTitle" data-passenger-title>승객 선택</h2><button type="button" data-passenger-close aria-label="닫기">×</button></div>
@@ -105,6 +108,22 @@
       </div>
       <p class="passenger-policy" data-passenger-policy>유아는 좌석을 사용하지 않으며 국내선은 무료, 국제선은 성인 정상 운임의 10%입니다. 소아·아동 운임은 성인 운임에서 25% 할인됩니다.</p>
       <button class="btn btn-dark passenger-done" type="button" data-passenger-close data-passenger-done>선택 완료</button>
+    </section>
+  </div>
+
+  <div class="payment-sim-modal" data-payment-sim-modal hidden>
+    <section class="payment-sim-dialog" role="dialog" aria-modal="true" aria-labelledby="paymentSimTitle">
+      <div class="payment-sim-head">
+        <div><p class="eyebrow" data-payment-sim-eyebrow>DEMO PAYMENT</p><h2 id="paymentSimTitle" data-payment-sim-title>가상 결제</h2></div>
+        <button class="payment-sim-close" type="button" data-payment-sim-close aria-label="닫기">×</button>
+      </div>
+      <p class="payment-sim-warning" data-payment-sim-warning>이 결제 단계는 시뮬레이션입니다. 실제 결제가 발생하지 않으며 실제 카드·계좌 정보를 입력하지 않습니다.</p>
+      <strong data-payment-sim-summary-label>결제 예정 예약</strong>
+      <div class="payment-sim-summary" data-payment-sim-summary></div>
+      <label class="payment-sim-field"><span data-payment-sim-method-label>가상 결제 수단</span><select data-payment-sim-method><option value="demo-card">Demo Card</option><option value="demo-bank">Demo Bank Transfer</option><option value="demo-wallet">Demo Wallet</option></select></label>
+      <div class="payment-sim-actions"><button class="btn btn-olive" type="button" data-payment-sim-approve>가상 결제 승인</button><button class="btn btn-dark" type="button" data-payment-sim-decline>승인 거절 테스트</button></div>
+      <p class="payment-sim-error" data-payment-sim-error hidden></p>
+      <p class="payment-sim-secure" data-payment-sim-secure>저장되는 정보는 paid-demo 상태와 가상 결제 수단뿐이며 카드번호·CVC·계좌번호 등 민감정보는 수집하지 않습니다.</p>
     </section>
   </div>
 
@@ -127,6 +146,7 @@
   <script src="../app.js"></script>
   <script type="module" src="booking.js?v=20260816-seat-selection-v3"></script>
   <script type="module" src="passenger-info.js?v=20260816-passenger-info-v3"></script>
+  <script type="module" src="payment-sim.js?v=20260816-demo-payment-v1"></script>
   <script src="booking-l10n.js?v=20260816-i18n-audit-v1"></script>
 </body>
 </html>

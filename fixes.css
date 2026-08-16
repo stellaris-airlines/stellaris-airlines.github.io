@@ -14,6 +14,43 @@
   padding-bottom:0;
 }
 
+.notice-shortcut{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  flex:0 0 40px;
+  width:40px;
+  height:40px;
+  border:1px solid var(--line);
+  background:#fff;
+  transition:border-color .16s ease,color .16s ease,background .16s ease;
+}
+.notice-shortcut:hover,.notice-shortcut:focus-visible{
+  border-color:var(--olive);
+  color:var(--olive-deep);
+  background:#faf9f3;
+}
+.notice-shortcut svg{
+  width:20px;
+  height:20px;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:1.7;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+.sr-only{
+  position:absolute!important;
+  width:1px!important;
+  height:1px!important;
+  padding:0!important;
+  margin:-1px!important;
+  overflow:hidden!important;
+  clip:rect(0,0,0,0)!important;
+  white-space:nowrap!important;
+  border:0!important;
+}
+
 @media (min-width:901px) and (max-width:1380px){
   .header-tools .book-link{
     height:44px;
@@ -22,12 +59,14 @@
 
   .header-tools .language-switcher,
   .header-tools .language-trigger,
-  .header-tools .mobile-menu-button{
+  .header-tools .mobile-menu-button,
+  .header-tools .notice-shortcut{
     height:44px;
     min-height:44px;
   }
 
-  .header-tools .mobile-menu-button{
+  .header-tools .mobile-menu-button,
+  .header-tools .notice-shortcut{
     width:44px;
     flex:0 0 44px;
   }
@@ -111,6 +150,7 @@
 }
 
 @media (max-width:900px){
+  .notice-shortcut{display:none}
   .mobile-nav{
     max-width:100%;
     max-height:calc(100dvh - 74px);

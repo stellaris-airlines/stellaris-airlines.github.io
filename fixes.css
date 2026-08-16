@@ -15,7 +15,7 @@
 }
 
 .notice-shortcut{
-  display:inline-flex;
+  display:inline-flex!important;
   align-items:center;
   justify-content:center;
   flex:0 0 40px;
@@ -150,7 +150,14 @@
 }
 
 @media (max-width:900px){
-  .notice-shortcut{display:none}
+  .header-tools .notice-shortcut{
+    display:inline-flex!important;
+    width:38px;
+    height:38px;
+    min-height:38px;
+    flex:0 0 38px;
+  }
+  .header-tools .notice-shortcut svg{width:19px;height:19px}
   .mobile-nav{
     max-width:100%;
     max-height:calc(100dvh - 74px);

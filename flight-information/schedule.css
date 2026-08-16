@@ -31,10 +31,10 @@
 .flight-section-tabs .tab-title{font-size:14px;font-weight:800;letter-spacing:-.02em}
 .flight-section-tabs .tab-subtitle{color:#777a72;font-size:9px;font-weight:500}
 .flight-section-tabs .tab-arrow{font-size:17px;color:#8a8449;transition:transform .2s}
-.flight-section-tabs button.active{border-color:#151715;background:#151715;color:#fff;box-shadow:0 14px 30px rgba(21,23,21,.16)}
+.flight-section-tabs button.active{grid-template-columns:44px 1fr;border-color:#151715;background:#151715;color:#fff;box-shadow:0 14px 30px rgba(21,23,21,.16)}
 .flight-section-tabs button.active .tab-index{border-color:#a89f52;background:#a89f52;color:#151715}
 .flight-section-tabs button.active .tab-subtitle{color:rgba(255,255,255,.62)}
-.flight-section-tabs button.active .tab-arrow{color:#d4cc79;transform:rotate(45deg)}
+.flight-section-tabs button.active .tab-arrow{display:none}
 
 @media(max-width:1380px){.flight-section-tabs-wrap{top:74px}}
 @media(max-width:1100px){.international-schedule-grid{grid-template-columns:1fr}.timetable-pair span{white-space:normal}}
@@ -52,5 +52,6 @@
   .flight-section-tabs{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;padding:0 1px 7px;scrollbar-width:none}
   .flight-section-tabs::-webkit-scrollbar{display:none}
   .flight-section-tabs button{flex:0 0 82%;min-height:72px;grid-template-columns:38px 1fr 18px;scroll-snap-align:start;padding:11px 13px}
+  .flight-section-tabs button.active{grid-template-columns:38px 1fr}
   .flight-section-tabs .tab-index{width:38px;height:38px}
 }

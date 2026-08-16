@@ -1,197 +1,38 @@
 import { auth, db } from '../firebase-config.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
 import {
-  addDoc, collection, deleteDoc, doc, getDoc, onSnapshot, orderBy, query,
-  serverTimestamp, setDoc, updateDoc
+  addDoc, collection, deleteDoc, doc, getDoc, getDocs, onSnapshot, orderBy, query,
+  serverTimestamp, setDoc, Timestamp, updateDoc, where
 } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+import { seatLayout } from '../operations-model.js?v=20260816-live-ticketing-v2';
+import { escapeHtml, operationDocumentId } from '../travel-service-core.js?v=20260817-digital-v1';
 
 const ADMIN_EMAILS=new Set(['stellarisairlines@gmail.com','stellaris.web.dev@gmail.com']);
-const gate=document.querySelector('[data-admin-gate]');
-const consoleHost=document.querySelector('[data-admin-console]');
-const statusBox=document.querySelector('[data-admin-status]');
-const bannerForm=document.querySelector('[data-banner-form]');
-const noticeForm=document.querySelector('[data-notice-form]');
-const noticeList=document.querySelector('[data-admin-notice-list]');
-const cancelButton=document.querySelector('[data-notice-cancel]');
-let unsubscribeNotices=null;
-let currentAdmin=null;
+const gate=document.querySelector('[data-admin-gate]'),consoleHost=document.querySelector('[data-admin-console]'),statusBox=document.querySelector('[data-admin-status]');
+const bannerForm=document.querySelector('[data-banner-form]'),homeForm=document.querySelector('[data-home-form]'),noticeForm=document.querySelector('[data-notice-form]'),noticeList=document.querySelector('[data-admin-notice-list]'),cancelButton=document.querySelector('[data-notice-cancel]');
+const operationForm=document.querySelector('[data-operation-form]'),operationList=document.querySelector('[data-operation-list]'),operationCancel=document.querySelector('[data-operation-cancel]');
+const bookingSearch=document.querySelector('[data-booking-search]'),bookingResult=document.querySelector('[data-booking-result]');
+let currentAdmin=null,unsubscribeNotices=null,unsubscribeOperations=null;
+function status(message,type=''){if(!statusBox)return;statusBox.textContent=message;statusBox.className='admin-status'+(type?' '+type:'');}
+function errorText(error){return [String(error?.code||'').replace(/^firestore\//,''),String(error?.message||'').trim()].filter(Boolean).join(' · ');}
+function isAdmin(user){return Boolean(user&&ADMIN_EMAILS.has(String(user.email||'').toLowerCase()));}
+function defaultAuthor(){const display=String(currentAdmin?.displayName||'').trim();return display&&display.length<=50?display:'STELLARIS AIRLINES';}
+function toLocalInput(value){if(!value)return '';const d=value?.toDate?value.toDate():new Date(value);if(Number.isNaN(d.getTime()))return '';const offset=d.getTimezoneOffset()*60000;return new Date(d-offset).toISOString().slice(0,16);}
+function fromLocalInput(value){if(!value)return null;const d=new Date(value);return Number.isNaN(d.getTime())?null:Timestamp.fromDate(d);}
+async function loadBanner(){try{const snap=await getDoc(doc(db,'siteContent','homeBanner'));const data=snap.exists()?snap.data():{active:true,text:'새로운 좌석 브랜드를 만나보세요 — CELESTIA · ASTRELIS · LUMINA · NOVA',linkLabel:'좌석 안내',linkUrl:'seats/'};bannerForm.elements.active.checked=data.active!==false;bannerForm.elements.text.value=data.text||'';bannerForm.elements.linkLabel.value=data.linkLabel||'';bannerForm.elements.linkUrl.value=data.linkUrl||'';}catch(error){status(`배너 설정을 불러오지 못했습니다. ${errorText(error)}`,'error');}}
+async function loadHome(){try{const snap=await getDoc(doc(db,'siteContent','homeExperience'));const d=snap.exists()?snap.data():{};['heroTitle','heroBody','promotionTitle','promotionBody','routeTitle','routeBody','popupTitle','popupBody'].forEach(k=>{if(homeForm.elements[k])homeForm.elements[k].value=d[k]||'';});homeForm.elements.popupActive.checked=d.popupActive===true;}catch(error){status(`홈 콘텐츠를 불러오지 못했습니다. ${errorText(error)}`,'error');}}
+function resetNoticeForm(){noticeForm.reset();noticeForm.elements.category.value='일반';noticeForm.elements.status.value='published';noticeForm.elements.author.value=defaultAuthor();noticeForm.elements.noticeId.value='';noticeForm.querySelector('[data-notice-submit]').textContent='공지 등록';cancelButton.hidden=true;}
+function renderNotices(items){noticeList.innerHTML='';if(!items.length){noticeList.innerHTML='<p>등록된 공지사항이 없습니다.</p>';return;}items.forEach(item=>{const article=document.createElement('article');article.className='admin-notice-item';const content=document.createElement('div'),meta=document.createElement('div');meta.className='admin-notice-meta';meta.textContent=`${item.category==='중요'||item.pinned?'중요':'일반'} · ${item.author||'작성자 미지정'} · ${item.status||'published'} · 조회 ${Number(item.views||0)}`;const title=document.createElement('h3');title.textContent=item.title||'제목 없음';const body=document.createElement('p');body.textContent=item.body||'';content.append(meta,title,body);const actions=document.createElement('div');actions.className='admin-notice-actions';const edit=document.createElement('button');edit.type='button';edit.className='admin-mini-btn';edit.textContent='수정';edit.onclick=()=>{noticeForm.elements.noticeId.value=item.id;noticeForm.elements.category.value=item.category==='중요'||item.pinned?'중요':'일반';noticeForm.elements.author.value=item.author||defaultAuthor();noticeForm.elements.status.value=item.status||'published';noticeForm.elements.publishStart.value=toLocalInput(item.publishStart||item.publishedAt);noticeForm.elements.publishEnd.value=toLocalInput(item.publishEnd);noticeForm.elements.title.value=item.title||'';noticeForm.elements.body.value=item.body||'';noticeForm.querySelector('[data-notice-submit]').textContent='수정 저장';cancelButton.hidden=false;noticeForm.scrollIntoView({behavior:'smooth',block:'start'});};const remove=document.createElement('button');remove.type='button';remove.className='admin-mini-btn danger';remove.textContent='삭제';remove.onclick=async()=>{if(!confirm('이 공지사항을 삭제할까요?'))return;try{await deleteDoc(doc(db,'notices',item.id));status('공지사항을 삭제했습니다.','success');}catch(error){status(`공지 삭제 실패: ${errorText(error)}`,'error');}};actions.append(edit,remove);article.append(content,actions);noticeList.append(article);});}
+function watchNotices(){if(unsubscribeNotices)unsubscribeNotices();unsubscribeNotices=onSnapshot(query(collection(db,'notices'),orderBy('publishedAt','desc')),snap=>renderNotices(snap.docs.map(d=>({id:d.id,...d.data()}))),error=>status(`공지 목록 오류: ${errorText(error)}`,'error'));}
+function resetOperationForm(){operationForm.reset();operationForm.elements.operationId.value='';operationForm.elements.delayMinutes.value='0';operationCancel.hidden=true;}
+function renderOperations(items){operationList.innerHTML=items.length?items.map(item=>`<article class="admin-ops-item" data-op-id="${escapeHtml(item.id)}"><div><b>${escapeHtml(item.flightNumber||'')} · ${escapeHtml(item.date||'')}</b><br><small>${escapeHtml(item.origin||'')} → ${escapeHtml(item.destination||'')} · ${escapeHtml(item.status||'')} · Gate ${escapeHtml(item.gate||'TBD')} · ${Number(item.delayMinutes||0)}분 지연</small></div><div class="admin-notice-actions"><button type="button" class="admin-mini-btn" data-op-edit>수정</button><button type="button" class="admin-mini-btn danger" data-op-delete>삭제</button></div></article>`).join(''):'<p>등록된 운항 정보가 없습니다.</p>';items.forEach(item=>{const row=operationList.querySelector(`[data-op-id="${CSS.escape(item.id)}"]`);row?.querySelector('[data-op-edit]')?.addEventListener('click',()=>{operationForm.elements.operationId.value=item.id;['date','flightNumber','origin','destination','scheduledDeparture','estimatedDeparture','status','delayMinutes','gate','terminal','boardingTime','aircraft'].forEach(k=>{if(operationForm.elements[k])operationForm.elements[k].value=item[k]??'';});operationCancel.hidden=false;operationForm.scrollIntoView({behavior:'smooth',block:'start'});});row?.querySelector('[data-op-delete]')?.addEventListener('click',async()=>{if(!confirm('이 운항 정보를 삭제할까요?'))return;try{await deleteDoc(doc(db,'flightOperations',item.id));status('운항 정보를 삭제했습니다.','success');}catch(error){status(`운항 정보 삭제 실패: ${errorText(error)}`,'error');}});});}
+function watchOperations(){if(unsubscribeOperations)unsubscribeOperations();unsubscribeOperations=onSnapshot(collection(db,'flightOperations'),snap=>{const items=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||String(a.flightNumber||'').localeCompare(String(b.flightNumber||'')));renderOperations(items.slice(0,60));},error=>status(`운항 정보 오류: ${errorText(error)}`,'error'));}
+async function occupancyFor(segment,allBookings){const capacity=seatLayout(segment.aircraft,segment.cabin).length||0;let occupied=0;allBookings.filter(b=>b.status==='ticketed').forEach(b=>(b.segments||[]).forEach(s=>{if(s.flightNumber===segment.flightNumber&&s.date===segment.date&&s.cabin===segment.cabin)occupied+=(s.seats||[]).length;}));return {capacity,occupied,rate:capacity?Math.round(occupied/capacity*100):0};}
+async function renderBookingSearch(items){if(!items.length){bookingResult.innerHTML='<div class="service-message">예약을 찾을 수 없습니다.</div>';return;}let all=[];try{all=(await getDocs(collection(db,'bookings'))).docs.map(d=>({id:d.id,...d.data()}));}catch(error){all=items;}const blocks=[];for(const b of items.slice(0,20)){const manifest=Array.isArray(b.passengerManifest)?b.passengerManifest:[],segments=b.segments||[],occ=segments[0]?await occupancyFor(segments[0],all):{capacity:0,occupied:0,rate:0};blocks.push(`<article class="service-card"><div class="service-card-head"><div><p class="eyebrow">${escapeHtml(b.bookingRef||'')}</p><h3>${escapeHtml(b.email||'')}</h3></div><span class="service-status">${escapeHtml(b.status||'')}</span></div><div class="service-meta"><div><span>승객수</span><b>${b.passengerCount??b.passengers??manifest.length}</b></div><div><span>기종</span><b>${escapeHtml(segments[0]?.aircraft||'—')}</b></div><div><span>좌석 점유율</span><b>${occ.occupied}/${occ.capacity||'—'} · ${occ.rate}%</b></div><div><span>체크인</span><b>${escapeHtml(b.checkInStatus||'미완료')}</b></div></div><div class="service-message"><b>승객 명단</b><br>${manifest.length?manifest.map(p=>escapeHtml([p.givenName,p.surname].filter(Boolean).join(' '))).join('<br>'):escapeHtml(b.leadPassengerName||'—')}</div><div class="service-message" style="margin-top:10px"><b>여정</b><br>${segments.map(s=>`${escapeHtml(s.flightNumber||'')} · ${escapeHtml(s.origin||'')}→${escapeHtml(s.destination||'')} · ${escapeHtml(s.date||'')} ${escapeHtml(s.departure||'')} · ${escapeHtml((s.seats||[]).join(', ')||'—')}`).join('<br>')}</div></article>`);}bookingResult.innerHTML=blocks.join('');}
 
-function status(message,type=''){
-  if(!statusBox)return;
-  statusBox.textContent=message;
-  statusBox.className='admin-status'+(type?' '+type:'');
-}
-function errorText(error){
-  const code=String(error?.code||'').replace(/^firestore\//,'');
-  const message=String(error?.message||'').trim();
-  return [code,message].filter(Boolean).join(' · ');
-}
-function isAdmin(user){
-  return Boolean(user&&ADMIN_EMAILS.has(String(user.email||'').toLowerCase()));
-}
-function defaultAuthor(user=currentAdmin){
-  const display=String(user?.displayName||'').trim();
-  return display&&display.length<=50?display:'STELLARIS AIRLINES';
-}
-async function loadBanner(){
-  try{
-    const snapshot=await getDoc(doc(db,'siteContent','homeBanner'));
-    const data=snapshot.exists()?snapshot.data():{
-      active:true,
-      text:'새로운 좌석 브랜드를 만나보세요 — CELESTIA · ASTRELIS · LUMINA · NOVA',
-      linkLabel:'좌석 안내',
-      linkUrl:'seats/'
-    };
-    bannerForm.elements.active.checked=data.active!==false;
-    bannerForm.elements.text.value=data.text||'';
-    bannerForm.elements.linkLabel.value=data.linkLabel||'';
-    bannerForm.elements.linkUrl.value=data.linkUrl||'';
-  }catch(error){
-    console.error('Banner load failed',error);
-    status(`배너 설정을 불러오지 못했습니다.${errorText(error)?' '+errorText(error):''}`,'error');
-  }
-}
-function resetNoticeForm(){
-  noticeForm.reset();
-  noticeForm.elements.category.value='일반';
-  noticeForm.elements.author.value=defaultAuthor();
-  noticeForm.elements.noticeId.value='';
-  noticeForm.querySelector('[data-notice-submit]').textContent='공지 등록';
-  cancelButton.hidden=true;
-}
-function renderNotices(items){
-  noticeList.innerHTML='';
-  if(!items.length){noticeList.innerHTML='<p>등록된 공지사항이 없습니다.</p>';return;}
-  items.forEach(item=>{
-    const article=document.createElement('article');article.className='admin-notice-item';
-    const content=document.createElement('div');
-    const meta=document.createElement('div');meta.className='admin-notice-meta';
-    const category=item.category==='중요'||item.pinned?'중요':'일반';
-    meta.textContent=`${category} · ${item.author||'작성자 미지정'}`;
-    const title=document.createElement('h3');title.textContent=item.title||'제목 없음';
-    const body=document.createElement('p');body.textContent=item.body||'';
-    content.append(meta,title,body);
-    const actions=document.createElement('div');actions.className='admin-notice-actions';
-    const edit=document.createElement('button');edit.type='button';edit.className='admin-mini-btn';edit.textContent='수정';
-    edit.addEventListener('click',()=>{
-      noticeForm.elements.noticeId.value=item.id;
-      noticeForm.elements.category.value=item.category==='중요'||item.pinned?'중요':'일반';
-      noticeForm.elements.author.value=item.author||defaultAuthor();
-      noticeForm.elements.title.value=item.title||'';
-      noticeForm.elements.body.value=item.body||'';
-      noticeForm.querySelector('[data-notice-submit]').textContent='수정 저장';
-      cancelButton.hidden=false;
-      noticeForm.scrollIntoView({behavior:'smooth',block:'start'});
-    });
-    const remove=document.createElement('button');remove.type='button';remove.className='admin-mini-btn danger';remove.textContent='삭제';
-    remove.addEventListener('click',async()=>{
-      if(!window.confirm('이 공지사항을 삭제할까요?'))return;
-      try{
-        await deleteDoc(doc(db,'notices',item.id));
-        status('공지사항을 삭제했습니다.','success');
-      }catch(error){
-        console.error('Notice delete failed',error);
-        status(`공지사항 삭제에 실패했습니다.${errorText(error)?' '+errorText(error):''}`,'error');
-      }
-    });
-    actions.append(edit,remove);article.append(content,actions);noticeList.append(article);
-  });
-}
-function watchNotices(){
-  if(unsubscribeNotices)unsubscribeNotices();
-  unsubscribeNotices=onSnapshot(query(collection(db,'notices'),orderBy('publishedAt','desc')),snapshot=>{
-    renderNotices(snapshot.docs.map(item=>({id:item.id,...item.data()})));
-  },error=>{
-    console.error('Notice list failed',error);
-    status(`공지사항 목록을 불러오지 못했습니다.${errorText(error)?' '+errorText(error):''}`,'error');
-  });
-}
-
-bannerForm?.addEventListener('submit',async event=>{
-  event.preventDefault();
-  const data={
-    active:bannerForm.elements.active.checked,
-    text:bannerForm.elements.text.value.trim(),
-    linkLabel:bannerForm.elements.linkLabel.value.trim(),
-    linkUrl:bannerForm.elements.linkUrl.value.trim(),
-    updatedAt:serverTimestamp()
-  };
-  try{
-    await setDoc(doc(db,'siteContent','homeBanner'),data,{merge:true});
-    status('홈페이지 상단 배너를 저장했습니다.','success');
-  }catch(error){
-    console.error('Banner save failed',error);
-    status(`배너 저장에 실패했습니다.${errorText(error)?' '+errorText(error):''}`,'error');
-  }
-});
-
-noticeForm?.addEventListener('submit',async event=>{
-  event.preventDefault();
-  if(!currentAdmin||!isAdmin(currentAdmin)){
-    status('관리자 인증이 만료되었습니다. 다시 로그인해 주세요.','error');
-    return;
-  }
-  const id=noticeForm.elements.noticeId.value.trim();
-  const category=noticeForm.elements.category.value==='중요'?'중요':'일반';
-  const author=noticeForm.elements.author.value.trim()||defaultAuthor();
-  const title=noticeForm.elements.title.value.trim();
-  const body=noticeForm.elements.body.value.trim();
-  noticeForm.elements.author.value=author;
-  if(!title||!body){
-    status('제목과 본문을 모두 입력해 주세요.','error');
-    return;
-  }
-  const payload={
-    category,
-    author,
-    title,
-    body,
-    pinned:category==='중요',
-    updatedAt:serverTimestamp()
-  };
-  const submitButton=noticeForm.querySelector('[data-notice-submit]');
-  const oldLabel=submitButton.textContent;
-  submitButton.disabled=true;
-  submitButton.textContent=id?'저장 중…':'등록 중…';
-  status('공지사항을 저장하고 있습니다.');
-  try{
-    if(id){
-      await updateDoc(doc(db,'notices',id),payload);
-      status('공지사항을 수정했습니다.','success');
-    }else{
-      await addDoc(collection(db,'notices'),{...payload,publishedAt:serverTimestamp()});
-      status('공지사항을 등록했습니다.','success');
-    }
-    resetNoticeForm();
-  }catch(error){
-    console.error('Notice save failed',error);
-    const detail=errorText(error);
-    if(String(error?.code||'').includes('permission-denied')){
-      status(`공지사항 저장 권한이 거부되었습니다. Firebase Firestore Rules가 최신인지 확인해 주세요.${detail?' '+detail:''}`,'error');
-    }else{
-      status(`공지사항 저장에 실패했습니다.${detail?' '+detail:''}`,'error');
-    }
-  }finally{
-    submitButton.disabled=false;
-    if(noticeForm.elements.noticeId.value.trim())submitButton.textContent='수정 저장';
-    else submitButton.textContent='공지 등록';
-    if(oldLabel==='수정 저장'&&noticeForm.elements.noticeId.value.trim())submitButton.textContent=oldLabel;
-  }
-});
-cancelButton?.addEventListener('click',resetNoticeForm);
-
-onAuthStateChanged(auth,user=>{
-  currentAdmin=isAdmin(user)?user:null;
-  const allowed=Boolean(currentAdmin);
-  if(!allowed){
-    consoleHost.hidden=true;gate.hidden=false;
-    gate.innerHTML=user
-      ?'<strong>관리자 권한이 없습니다.</strong><p>승인된 관리자 계정으로 로그인해 주세요.</p>'
-      :'<strong>로그인이 필요합니다.</strong><p><a href="../login/?next=../admin/">로그인</a> 후 관리자 페이지를 다시 열어 주세요.</p>';
-    return;
-  }
-  gate.hidden=true;consoleHost.hidden=false;
-  resetNoticeForm();
-  status(`관리자 계정으로 접속했습니다: ${user.email||user.uid}`,'success');
-  void loadBanner();watchNotices();
-});
+bannerForm?.addEventListener('submit',async e=>{e.preventDefault();try{await setDoc(doc(db,'siteContent','homeBanner'),{active:bannerForm.elements.active.checked,text:bannerForm.elements.text.value.trim(),linkLabel:bannerForm.elements.linkLabel.value.trim(),linkUrl:bannerForm.elements.linkUrl.value.trim(),updatedAt:serverTimestamp()},{merge:true});status('홈 배너를 저장했습니다.','success');}catch(error){status(`배너 저장 실패: ${errorText(error)}`,'error');}});
+homeForm?.addEventListener('submit',async e=>{e.preventDefault();const data={popupActive:homeForm.elements.popupActive.checked,updatedAt:serverTimestamp()};['heroTitle','heroBody','promotionTitle','promotionBody','routeTitle','routeBody','popupTitle','popupBody'].forEach(k=>data[k]=homeForm.elements[k].value.trim());try{await setDoc(doc(db,'siteContent','homeExperience'),data,{merge:true});status('홈 운영 콘텐츠를 저장했습니다.','success');}catch(error){status(`홈 콘텐츠 저장 실패: ${errorText(error)}`,'error');}});
+operationForm?.addEventListener('submit',async e=>{e.preventDefault();const data={date:operationForm.elements.date.value,flightNumber:operationForm.elements.flightNumber.value.trim().toUpperCase(),origin:operationForm.elements.origin.value.trim().toUpperCase(),destination:operationForm.elements.destination.value.trim().toUpperCase(),scheduledDeparture:operationForm.elements.scheduledDeparture.value,estimatedDeparture:operationForm.elements.estimatedDeparture.value,status:operationForm.elements.status.value,delayMinutes:Number(operationForm.elements.delayMinutes.value||0),gate:operationForm.elements.gate.value.trim(),terminal:operationForm.elements.terminal.value.trim(),boardingTime:operationForm.elements.boardingTime.value,aircraft:operationForm.elements.aircraft.value.trim(),updatedAt:serverTimestamp()};const id=operationForm.elements.operationId.value||operationDocumentId(data);try{await setDoc(doc(db,'flightOperations',id),data,{merge:true});status('운항 정보를 저장했습니다.','success');resetOperationForm();}catch(error){status(`운항 정보 저장 실패: ${errorText(error)}`,'error');}});operationCancel?.addEventListener('click',resetOperationForm);
+bookingSearch?.addEventListener('submit',async e=>{e.preventDefault();const ref=bookingSearch.elements.bookingRef.value.trim().toUpperCase(),email=bookingSearch.elements.email.value.trim();bookingResult.innerHTML='<div class="service-message">검색 중…</div>';try{let snap;if(ref)snap=await getDocs(query(collection(db,'bookings'),where('bookingRef','==',ref)));else if(email)snap=await getDocs(query(collection(db,'bookings'),where('email','==',email)));else{bookingResult.innerHTML='<div class="service-message error">예약번호 또는 이메일을 입력해 주세요.</div>';return;}await renderBookingSearch(snap.docs.map(d=>({id:d.id,...d.data()})));}catch(error){bookingResult.innerHTML=`<div class="service-message error">예약 검색 실패: ${escapeHtml(errorText(error))}</div>`;}});
+noticeForm?.addEventListener('submit',async e=>{e.preventDefault();if(!currentAdmin){status('관리자 인증이 만료되었습니다.','error');return;}const id=noticeForm.elements.noticeId.value.trim(),category=noticeForm.elements.category.value==='중요'?'중요':'일반',publishStart=fromLocalInput(noticeForm.elements.publishStart.value)||Timestamp.now(),publishEnd=fromLocalInput(noticeForm.elements.publishEnd.value);const payload={category,author:noticeForm.elements.author.value.trim()||defaultAuthor(),status:noticeForm.elements.status.value==='draft'?'draft':'published',publishStart,publishEnd:publishEnd||null,title:noticeForm.elements.title.value.trim(),body:noticeForm.elements.body.value.trim(),pinned:category==='중요',updatedAt:serverTimestamp()};if(!payload.title||!payload.body){status('제목과 본문을 입력해 주세요.','error');return;}try{if(id)await updateDoc(doc(db,'notices',id),payload);else await addDoc(collection(db,'notices'),{...payload,views:0,publishedAt:serverTimestamp()});status(id?'공지사항을 수정했습니다.':'공지사항을 등록했습니다.','success');resetNoticeForm();}catch(error){status(`공지 저장 실패: ${errorText(error)}`,'error');}});cancelButton?.addEventListener('click',resetNoticeForm);
+onAuthStateChanged(auth,user=>{currentAdmin=isAdmin(user)?user:null;if(!currentAdmin){consoleHost.hidden=true;gate.hidden=false;gate.innerHTML=user?'<strong>관리자 권한이 없습니다.</strong><p>승인된 관리자 계정으로 로그인해 주세요.</p>':'<strong>로그인이 필요합니다.</strong><p><a href="../login/?next=../admin/">로그인</a> 후 다시 열어 주세요.</p>';return;}gate.hidden=true;consoleHost.hidden=false;resetNoticeForm();resetOperationForm();status(`관리자 계정으로 접속했습니다: ${user.email}`,'success');void loadBanner();void loadHome();watchNotices();watchOperations();});

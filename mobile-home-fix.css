@@ -1,0 +1,161 @@
+/* Mobile home layout hardening: keep the header and hero inside the viewport. */
+html, body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.site-header,
+.header-inner,
+main,
+.home-hero,
+.home-hero-grid {
+  max-width: 100%;
+}
+
+@supports (overflow: clip) {
+  html, body { overflow-x: clip; }
+}
+
+@media (max-width: 900px) {
+  .header-inner {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+  }
+
+  .brand {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .header-tools {
+    min-width: 0;
+    gap: 6px;
+  }
+
+  .home-hero {
+    width: 100%;
+    max-width: 100%;
+    min-height: calc(100svh - 74px);
+    padding: 52px 0 210px;
+    overflow: hidden;
+  }
+
+  .home-hero-grid {
+    width: calc(100% - 32px);
+    min-height: 0;
+    margin-inline: auto;
+  }
+
+  .hero-copy {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .hero-copy h1 {
+    width: 100%;
+    max-width: 100%;
+    font-size: clamp(42px, 11.5vw, 62px);
+    line-height: 1.02;
+    letter-spacing: -0.05em;
+    overflow-wrap: anywhere;
+  }
+
+  .hero-copy > p {
+    max-width: 100%;
+    font-size: 15px;
+    line-height: 1.7;
+    margin-top: 22px;
+  }
+
+  .hero-actions {
+    flex-wrap: wrap;
+    gap: 16px 20px;
+    margin-top: 28px;
+  }
+
+  .hero-brand-mark {
+    right: -48px;
+    bottom: 10px;
+    width: min(72vw, 340px);
+  }
+
+  .hero-orbit {
+    width: 620px;
+    height: 620px;
+    right: -390px;
+    top: -170px;
+  }
+
+  .quick-panel {
+    left: 16px;
+    right: 16px;
+    width: auto;
+    max-width: none;
+    transform: translateY(50%);
+  }
+}
+
+@media (max-width: 600px) {
+  .header-inner {
+    width: calc(100% - 24px);
+  }
+
+  .brand-symbol-image {
+    height: 34px;
+    flex: 0 0 auto;
+  }
+
+  .brand-wordmark-image {
+    height: 12px;
+    max-width: 124px;
+    object-fit: contain;
+  }
+
+  .header-tools .book-link {
+    display: none;
+  }
+
+  .mobile-menu-button {
+    flex: 0 0 42px;
+  }
+
+  .home-hero {
+    min-height: calc(100svh - 74px);
+    padding-top: 44px;
+    padding-bottom: 190px;
+  }
+
+  .home-hero-grid {
+    width: calc(100% - 28px);
+  }
+
+  .hero-copy .eyebrow {
+    font-size: 8px;
+    line-height: 1.55;
+  }
+
+  .hero-copy h1 {
+    font-size: clamp(38px, 12vw, 50px);
+  }
+
+  .quick-panel {
+    left: 14px;
+    right: 14px;
+  }
+
+  .quick-panel a {
+    min-width: 0;
+    padding: 17px 14px;
+  }
+}
+
+@media (max-width: 380px) {
+  .brand-wordmark-image {
+    max-width: 104px;
+  }
+
+  .hero-copy h1 {
+    font-size: 38px;
+  }
+}

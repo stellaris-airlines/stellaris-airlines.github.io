@@ -89,3 +89,52 @@
   word-break:keep-all;
   overflow-wrap:normal;
 }
+
+/* Global QA hardening: prefer whole-word wrapping while still allowing emergency breaks. */
+:where(.page-hero,.content-section,.site-footer,.mobile-nav,.booking-engine,.passenger-modal,.ticket-modal)
+:where(h1,h2,h3,h4,p,a,span,button,strong,small,li,dt,dd,label){
+  word-break:keep-all;
+  overflow-wrap:break-word;
+}
+
+/* Wide interactive content must scroll inside its own region instead of clipping the viewport. */
+.seat-map-shell,
+.tier-table,
+.flight-status-table{
+  max-width:100%;
+}
+
+.seat-map-shell{
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior-inline:contain;
+}
+
+@media (max-width:900px){
+  .mobile-nav{
+    max-width:100%;
+    max-height:calc(100dvh - 74px);
+    overflow-x:hidden;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  .mobile-nav a{
+    min-width:0;
+    max-width:100%;
+    white-space:normal;
+    word-break:keep-all;
+    overflow-wrap:break-word;
+  }
+
+  .seat-map{
+    min-width:max-content;
+  }
+
+  .tier-table,
+  .flight-status-table{
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+}

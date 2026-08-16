@@ -2,10 +2,11 @@ import { auth, db } from './firebase-config.js';
 import { collection, doc, getDoc, getDocs, onSnapshot, query, serverTimestamp, updateDoc, where, writeBatch } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 import { bookingSeatInventoryKey, checkInWindow, escapeHtml, operationDocumentId } from './travel-service-core.js?v=20260817-digital-v1';
 
+if(!document.querySelector('link[data-digital-services-style]')){const style=document.createElement('link');style.rel='stylesheet';style.href=new URL('./service-pages.css?v=20260817-digital-v1',import.meta.url).href;style.dataset.digitalServicesStyle='true';document.head.appendChild(style);}
 const page=document.body.dataset.page||'';
 function root(path=''){return new URL(path,import.meta.url).href;}
 function addNavLink(host,path,label,marker){
-  if(!host||host.querySelector(`[data-${marker}]`))return;
+  if(!host||[...host.querySelectorAll('a')].some(a=>a.dataset[marker]))return;
   const a=document.createElement('a');a.href=root(path);a.textContent=label;a.dataset[marker]='true';host.appendChild(a);
 }
 function installServiceNavigation(){
@@ -20,7 +21,7 @@ function installServiceNavigation(){
   }
 }
 installServiceNavigation();
-new MutationObserver(installServiceNavigation).observe(document.body,{childList:true,subtree:true});
+const navObserver=new MutationObserver(()=>queueMicrotask(installServiceNavigation));navObserver.observe(document.body,{childList:true,subtree:true});
 
 async function ownedBooking(reference){
   const user=auth.currentUser;if(!user)return null;
@@ -38,10 +39,7 @@ async function cancelBooking(reference,button){
   button.disabled=true;button.textContent='취소 처리 중…';
   const batch=writeBatch(db),bookingRef=doc(db,'bookings',booking.id);
   batch.update(bookingRef,{status:'cancelled',cancellationStatus:'cancelled-demo',paymentStatus:'refunded-demo',refundAmount:Number(booking.totalFare||0),cancelledAt:serverTimestamp(),checkInStatus:'cancelled'});
-  for(const segment of booking.segments||[]){
-    const key=bookingSeatInventoryKey(segment);
-    for(const seatId of segment.seats||[])batch.delete(doc(db,'flightInventories',key,'seats',seatId));
-  }
+  for(const segment of booking.segments||[]){const key=bookingSeatInventoryKey(segment);for(const seatId of segment.seats||[])batch.delete(doc(db,'flightInventories',key,'seats',seatId));}
   await batch.commit();location.reload();
 }
 async function requestChange(reference,button){
@@ -61,9 +59,9 @@ async function decorateReservationCard(card){
   const booking=await ownedBooking(reference).catch(()=>null);if(!booking)return;
   const segment=booking.segments?.[0]||null,windowState=checkInWindow(booking),operation=await liveOperation(segment);
   const operationState=card.querySelector('.operation-state');
-  if(operationState&&operation?.status){operationState.textContent='● '+operation.status+(operation.delayMinutes?` +${operation.delayMinutes}분`:'');}
+  if(operationState&&operation?.status)operationState.textContent='● '+operation.status+(operation.delayMinutes?` +${operation.delayMinutes}분`:'');
   const ops=card.querySelector('.reservation-operations');
-  if(ops&&operation&&(operation.gate||operation.terminal)){const div=document.createElement('div');div.innerHTML=`<span>Gate / Terminal</span><b>${escapeHtml(operation.gate||'TBD')} · ${escapeHtml(operation.terminal||'TBD')}</b>`;ops.appendChild(div);}
+  if(ops&&operation&&(operation.gate||operation.terminal)&&!ops.querySelector('[data-live-gate]')){const div=document.createElement('div');div.dataset.liveGate='true';div.innerHTML=`<span>Gate / Terminal</span><b>${escapeHtml(operation.gate||'TBD')} · ${escapeHtml(operation.terminal||'TBD')}</b>`;ops.appendChild(div);}
   const actions=document.createElement('div');actions.className='manage-booking-actions';
   actions.innerHTML=`<a class="btn btn-dark" href="${root(`booking-confirmation/?booking=${encodeURIComponent(reference)}`)}">예약 확인서</a>${windowState.state==='open'&&booking.status==='ticketed'?`<a class="btn btn-olive" href="${root('check-in/')}">온라인 체크인</a>`:''}${booking.checkInStatus==='checked-in'?`<a class="btn btn-olive" href="${root(`boarding-pass/?booking=${encodeURIComponent(reference)}`)}">탑승권</a>`:''}${booking.status==='ticketed'?'<button class="btn btn-dark" type="button" data-change-booking>예약 변경 요청</button><button class="btn btn-dark" type="button" data-cancel-booking>예약 취소 · 가상 환불</button>':''}`;
   actions.querySelector('[data-change-booking]')?.addEventListener('click',e=>requestChange(reference,e.currentTarget).catch(()=>alert('변경 요청을 저장하지 못했습니다. Firestore Rules를 확인해 주세요.')));
@@ -71,7 +69,7 @@ async function decorateReservationCard(card){
   card.appendChild(actions);
 }
 function installReservationManagement(){document.querySelectorAll('.reservation-card').forEach(card=>void decorateReservationCard(card));}
-if(page==='find-your-reservations'){installReservationManagement();new MutationObserver(installReservationManagement).observe(document.body,{childList:true,subtree:true});}
+if(page==='find-your-reservations'){installReservationManagement();new MutationObserver(()=>queueMicrotask(installReservationManagement)).observe(document.body,{childList:true,subtree:true});}
 
 function installTicketEnhancement(){
   const modal=document.querySelector('[data-ticket-modal]');if(!modal)return;

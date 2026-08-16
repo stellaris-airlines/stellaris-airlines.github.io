@@ -7,6 +7,20 @@ const ADMIN_EMAILS=new Set(['stellarisairlines@gmail.com','stellaris.web.dev@gma
 const message=document.querySelector('[data-my-message]'),content=document.querySelector('[data-my-content]'),trips=document.querySelector('[data-trip-list]'),ledgerHost=document.querySelector('[data-mile-ledger]'),profileForm=document.querySelector('[data-profile-form]');
 let currentUser=null,currentBookings=[];
 function asDate(value){if(value?.toDate)return value.toDate();const d=new Date(value||0);return Number.isNaN(d.getTime())?new Date(0):d;}
+function parseSavedProfile(raw){
+  const text=String(raw||'').trim();
+  if(!text)return {primaryPassenger:{},notes:''};
+  try{
+    const data=JSON.parse(text);
+    if(data&&data.version===2&&data.primaryPassenger&&typeof data.primaryPassenger==='object'){
+      return {primaryPassenger:data.primaryPassenger,notes:String(data.notes||'')};
+    }
+  }catch(error){}
+  return {primaryPassenger:{},notes:text};
+}
+function packedProfile(primaryPassenger,notes){
+  return JSON.stringify({version:2,primaryPassenger,notes:String(notes||'').trim()});
+}
 async function bookingsFor(uid){const snap=await getDocs(query(collection(db,'bookings'),where('userId','==',uid)));return snap.docs.map(d=>({id:d.id,...d.data()}));}
 async function syncLedger(user,bookings){
   for(const booking of bookings){
@@ -33,7 +47,24 @@ function renderLedger(entries){
 }
 async function loadProfile(user){
   profileForm.elements.email.value=user.email||'';
-  try{const snap=await getDoc(doc(db,'travelProfiles',user.uid));const data=snap.exists()?snap.data():{};profileForm.elements.phone.value=data.phone||'';profileForm.elements.savedPassengers.value=data.savedPassengers||'';}catch(error){}
+  profileForm.elements.surname.value='';
+  profileForm.elements.givenName.value='';
+  profileForm.elements.birthDate.value='';
+  profileForm.elements.gender.value='';
+  profileForm.elements.phone.value='';
+  profileForm.elements.savedPassengers.value='';
+  try{
+    const snap=await getDoc(doc(db,'travelProfiles',user.uid));
+    const data=snap.exists()?snap.data():{};
+    const saved=parseSavedProfile(data.savedPassengers);
+    const primary=saved.primaryPassenger||{};
+    profileForm.elements.surname.value=primary.surname||'';
+    profileForm.elements.givenName.value=primary.givenName||'';
+    profileForm.elements.birthDate.value=primary.birthDate||'';
+    profileForm.elements.gender.value=['male','female'].includes(primary.gender)?primary.gender:'';
+    profileForm.elements.phone.value=data.phone||primary.phone||'';
+    profileForm.elements.savedPassengers.value=saved.notes||'';
+  }catch(error){}
 }
 async function render(user){
   try{
@@ -46,5 +77,27 @@ async function render(user){
     await loadProfile(user);renderTrips(currentBookings);renderLedger(ledger);message.hidden=true;content.hidden=false;
   }catch(error){message.textContent='My Page를 불러오지 못했습니다. Firestore Rules를 확인해 주세요.';message.className='service-message error';}
 }
-profileForm?.addEventListener('submit',async e=>{e.preventDefault();if(!currentUser)return;try{await setDoc(doc(db,'travelProfiles',currentUser.uid),{userId:currentUser.uid,email:currentUser.email||'',phone:profileForm.elements.phone.value.trim(),savedPassengers:profileForm.elements.savedPassengers.value.trim(),updatedAt:serverTimestamp()},{merge:true});message.hidden=false;message.textContent='여행 연락처를 저장했습니다.';message.className='service-message success';setTimeout(()=>{message.hidden=true;},2500);}catch(error){message.hidden=false;message.textContent='저장하지 못했습니다.';message.className='service-message error';}});
+profileForm?.addEventListener('submit',async e=>{
+  e.preventDefault();if(!currentUser)return;
+  const phone=profileForm.elements.phone.value.trim();
+  if(phone.replace(/\D/g,'').length<7){message.hidden=false;message.textContent='연락 가능한 전화번호를 입력해 주세요.';message.className='service-message error';return;}
+  const primaryPassenger={
+    surname:profileForm.elements.surname.value.trim(),
+    givenName:profileForm.elements.givenName.value.trim(),
+    birthDate:profileForm.elements.birthDate.value,
+    gender:profileForm.elements.gender.value||'',
+    email:currentUser.email||'',
+    phone
+  };
+  try{
+    await setDoc(doc(db,'travelProfiles',currentUser.uid),{
+      userId:currentUser.uid,
+      email:currentUser.email||'',
+      phone,
+      savedPassengers:packedProfile(primaryPassenger,profileForm.elements.savedPassengers.value),
+      updatedAt:serverTimestamp()
+    },{merge:true});
+    message.hidden=false;message.textContent='기본 탑승객 정보를 저장했습니다. 다음 예약부터 자동 입력됩니다.';message.className='service-message success';setTimeout(()=>{message.hidden=true;},3000);
+  }catch(error){message.hidden=false;message.textContent='저장하지 못했습니다.';message.className='service-message error';}
+});
 onAuthStateChanged(auth,user=>{currentUser=user;if(!user){message.innerHTML='My Page를 이용하려면 <a href="../login/?next=../my-page/">로그인</a>해 주세요.';return;}void render(user);});

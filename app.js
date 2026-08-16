@@ -197,7 +197,7 @@ let savedLanguage='ko';
 try{savedLanguage=localStorage.getItem('stellaris-language')||'ko';}catch(e){}
 if(!languageCodes.includes(savedLanguage))savedLanguage='ko';
 
-const I18N_VERSION='20260816-auth';
+const I18N_VERSION='20260816-privacy-phone';
 const finishI18n=()=>{
   const baseRows=window.STELLARIS_I18N?.rows||[];
   const extraRows=window.STELLARIS_EXTRA_I18N?.rows||[];

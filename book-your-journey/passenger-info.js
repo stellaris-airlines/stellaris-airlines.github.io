@@ -16,6 +16,7 @@ const errorBox=document.querySelector('[data-passenger-info-error]');
 const confirmPanel=document.querySelector('[data-booking-confirm]');
 const ticketModal=document.querySelector('[data-ticket-modal]');
 const passengerCountInput=document.getElementById('passengerCount');
+const departureInput=document.getElementById('departureDate');
 const counts=()=>({
   adults:Number(document.querySelector('[data-passenger-count="adults"]')?.textContent||1),
   children:Number(document.querySelector('[data-passenger-count="children"]')?.textContent||0),
@@ -23,13 +24,13 @@ const counts=()=>({
 });
 
 const I18N={
-  ko:{title:'승객 정보',intro:'예약에 포함되는 모든 승객의 정보를 입력하세요. 영문 이름은 여권 또는 신분증과 동일하게 입력하는 것을 권장합니다.',adult:'성인',child:'소아·아동',infant:'유아',surname:'성',given:'이름',dob:'생년월일',gender:'성별',male:'남성',female:'여성',unspecified:'선택 안 함',email:'대표 연락처 이메일',phone:'대표 연락처 전화번호',required:'모든 필수 승객 정보를 입력해 주세요.',invalidEmail:'올바른 이메일 주소를 입력해 주세요.',invalidPhone:'연락 가능한 전화번호를 입력해 주세요.',note:'첫 번째 성인 승객의 이메일과 전화번호는 예약 연락처로 사용됩니다.'},
-  'en-US':{title:'Passenger information',intro:'Enter the details for every passenger in this booking. Use names that match the passenger’s travel document.',adult:'Adult',child:'Child',infant:'Infant',surname:'Family name',given:'Given name',dob:'Date of birth',gender:'Gender',male:'Male',female:'Female',unspecified:'Prefer not to say',email:'Lead contact email',phone:'Lead contact phone',required:'Complete all required passenger information.',invalidEmail:'Enter a valid email address.',invalidPhone:'Enter a reachable phone number.',note:'The first adult passenger’s email and phone number will be used as the booking contact.'},
+  ko:{title:'승객 정보',intro:'예약에 포함되는 모든 승객의 정보를 입력하세요. 영문 이름은 여권 또는 신분증과 동일하게 입력하는 것을 권장합니다.',adult:'성인',child:'소아·아동',infant:'유아',surname:'성',given:'이름',dob:'생년월일',gender:'성별',male:'남성',female:'여성',unspecified:'선택 안 함',email:'대표 연락처 이메일',phone:'대표 연락처 전화번호',required:'모든 필수 승객 정보를 입력해 주세요.',invalidEmail:'올바른 이메일 주소를 입력해 주세요.',invalidPhone:'연락 가능한 전화번호를 입력해 주세요.',adultAgeInvalid:'성인은 출발일 기준 만 12세 이상이어야 합니다.',childAgeInvalid:'소아·아동은 출발일 기준 만 2세 이상 만 12세 미만이어야 합니다.',infantAgeInvalid:'유아는 출발일 기준 생후 7일 이상 만 2세 미만이어야 합니다.',birthFuture:'생년월일은 출발일보다 이전이어야 합니다.',note:'첫 번째 성인 승객의 이메일과 전화번호는 예약 연락처로 사용됩니다.'},
+  'en-US':{title:'Passenger information',intro:'Enter the details for every passenger in this booking. Use names that match the passenger’s travel document.',adult:'Adult',child:'Child',infant:'Infant',surname:'Family name',given:'Given name',dob:'Date of birth',gender:'Gender',male:'Male',female:'Female',unspecified:'Prefer not to say',email:'Lead contact email',phone:'Lead contact phone',required:'Complete all required passenger information.',invalidEmail:'Enter a valid email address.',invalidPhone:'Enter a reachable phone number.',adultAgeInvalid:'Adults must be age 12 or older on the departure date.',childAgeInvalid:'Children must be at least 2 and under 12 on the departure date.',infantAgeInvalid:'Infants must be at least 7 days old and under age 2 on the departure date.',birthFuture:'Date of birth must be before the departure date.',note:'The first adult passenger’s email and phone number will be used as the booking contact.'},
   'en-GB':null,
-  'zh-CN':{title:'乘客信息',intro:'请填写本次预订中所有乘客的信息，姓名应与旅行证件一致。',adult:'成人',child:'儿童',infant:'婴儿',surname:'姓',given:'名',dob:'出生日期',gender:'性别',male:'男',female:'女',unspecified:'不选择',email:'主要联系邮箱',phone:'主要联系电话',required:'请填写所有必填乘客信息。',invalidEmail:'请输入有效的电子邮箱。',invalidPhone:'请输入可联系的电话号码。',note:'第一位成人乘客的邮箱和电话将作为预订联系方式。'},
-  ja:{title:'搭乗者情報',intro:'この予約に含まれるすべての搭乗者情報を入力してください。氏名は旅行書類と同じ表記を推奨します。',adult:'大人',child:'小児',infant:'幼児',surname:'姓',given:'名',dob:'生年月日',gender:'性別',male:'男性',female:'女性',unspecified:'回答しない',email:'代表連絡先メール',phone:'代表連絡先電話番号',required:'必須の搭乗者情報をすべて入力してください。',invalidEmail:'有効なメールアドレスを入力してください。',invalidPhone:'連絡可能な電話番号を入力してください。',note:'最初の大人のメールアドレスと電話番号を予約連絡先として使用します。'},
-  es:{title:'Información de pasajeros',intro:'Introduce los datos de todos los pasajeros de la reserva. Usa los nombres tal como aparecen en el documento de viaje.',adult:'Adulto',child:'Niño',infant:'Bebé',surname:'Apellidos',given:'Nombre',dob:'Fecha de nacimiento',gender:'Sexo',male:'Hombre',female:'Mujer',unspecified:'Prefiero no indicarlo',email:'Correo de contacto',phone:'Teléfono de contacto',required:'Completa todos los datos obligatorios de los pasajeros.',invalidEmail:'Introduce un correo electrónico válido.',invalidPhone:'Introduce un número de teléfono válido.',note:'El correo y teléfono del primer adulto se utilizarán como contacto de la reserva.'},
-  fr:{title:'Informations passagers',intro:'Saisissez les informations de tous les passagers de cette réservation. Utilisez les noms figurant sur le document de voyage.',adult:'Adulte',child:'Enfant',infant:'Bébé',surname:'Nom',given:'Prénom',dob:'Date de naissance',gender:'Sexe',male:'Homme',female:'Femme',unspecified:'Ne pas préciser',email:'E-mail de contact',phone:'Téléphone de contact',required:'Renseignez toutes les informations passager obligatoires.',invalidEmail:'Saisissez une adresse e-mail valide.',invalidPhone:'Saisissez un numéro de téléphone joignable.',note:'L’e-mail et le téléphone du premier adulte seront utilisés comme contact de réservation.'}
+  'zh-CN':{title:'乘客信息',intro:'请填写本次预订中所有乘客的信息，姓名应与旅行证件一致。',adult:'成人',child:'儿童',infant:'婴儿',surname:'姓',given:'名',dob:'出生日期',gender:'性别',male:'男',female:'女',unspecified:'不选择',email:'主要联系邮箱',phone:'主要联系电话',required:'请填写所有必填乘客信息。',invalidEmail:'请输入有效的电子邮箱。',invalidPhone:'请输入可联系的电话号码。',adultAgeInvalid:'成人在出发日必须年满12周岁。',childAgeInvalid:'儿童在出发日必须年满2周岁且未满12周岁。',infantAgeInvalid:'婴儿在出发日必须出生满7天且未满2周岁。',birthFuture:'出生日期必须早于出发日期。',note:'第一位成人乘客的邮箱和电话将作为预订联系方式。'},
+  ja:{title:'搭乗者情報',intro:'この予約に含まれるすべての搭乗者情報を入力してください。氏名は旅行書類と同じ表記を推奨します。',adult:'大人',child:'小児',infant:'幼児',surname:'姓',given:'名',dob:'生年月日',gender:'性別',male:'男性',female:'女性',unspecified:'回答しない',email:'代表連絡先メール',phone:'代表連絡先電話番号',required:'必須の搭乗者情報をすべて入力してください。',invalidEmail:'有効なメールアドレスを入力してください。',invalidPhone:'連絡可能な電話番号を入力してください。',adultAgeInvalid:'大人は出発日時点で12歳以上である必要があります。',childAgeInvalid:'小児は出発日時点で2歳以上12歳未満である必要があります。',infantAgeInvalid:'幼児は出発日時点で生後7日以上2歳未満である必要があります。',birthFuture:'生年月日は出発日より前である必要があります。',note:'最初の大人のメールアドレスと電話番号を予約連絡先として使用します。'},
+  es:{title:'Información de pasajeros',intro:'Introduce los datos de todos los pasajeros de la reserva. Usa los nombres tal como aparecen en el documento de viaje.',adult:'Adulto',child:'Niño',infant:'Bebé',surname:'Apellidos',given:'Nombre',dob:'Fecha de nacimiento',gender:'Sexo',male:'Hombre',female:'Mujer',unspecified:'Prefiero no indicarlo',email:'Correo de contacto',phone:'Teléfono de contacto',required:'Completa todos los datos obligatorios de los pasajeros.',invalidEmail:'Introduce un correo electrónico válido.',invalidPhone:'Introduce un número de teléfono válido.',adultAgeInvalid:'Los adultos deben tener 12 años o más en la fecha de salida.',childAgeInvalid:'Los niños deben tener al menos 2 años y menos de 12 en la fecha de salida.',infantAgeInvalid:'Los bebés deben tener al menos 7 días y menos de 2 años en la fecha de salida.',birthFuture:'La fecha de nacimiento debe ser anterior a la fecha de salida.',note:'El correo y teléfono del primer adulto se utilizarán como contacto de la reserva.'},
+  fr:{title:'Informations passagers',intro:'Saisissez les informations de tous les passagers de cette réservation. Utilisez les noms figurant sur le document de voyage.',adult:'Adulte',child:'Enfant',infant:'Bébé',surname:'Nom',given:'Prénom',dob:'Date de naissance',gender:'Sexe',male:'Homme',female:'Femme',unspecified:'Ne pas préciser',email:'E-mail de contact',phone:'Téléphone de contact',required:'Renseignez toutes les informations passager obligatoires.',invalidEmail:'Saisissez une adresse e-mail valide.',invalidPhone:'Saisissez un numéro de téléphone joignable.',adultAgeInvalid:'Les adultes doivent avoir au moins 12 ans à la date de départ.',childAgeInvalid:'Les enfants doivent avoir au moins 2 ans et moins de 12 ans à la date de départ.',infantAgeInvalid:'Les bébés doivent avoir au moins 7 jours et moins de 2 ans à la date de départ.',birthFuture:'La date de naissance doit être antérieure à la date de départ.',note:'L’e-mail et le téléphone du premier adulte seront utilisés comme contact de réservation.'}
 };
 I18N['en-GB']=I18N['en-US'];
 const lang=()=>{const code=localStorage.getItem('stellaris-language')||'ko';return I18N[code]?code:'ko'};
@@ -63,6 +64,7 @@ function render(){
   const newSignature=JSON.stringify(plan);
   if(newSignature===signature&&host.children.length)return;
   signature=newSignature;
+  const departureMax=departureInput?.value||'';
   host.innerHTML=plan.map((p,idx)=>{
     const key=p.type+'-'+p.index,old=saved.get(key)||{};
     const label=t(p.type);
@@ -72,7 +74,7 @@ function render(){
       <div class="passenger-info-grid">
         <label>${t('surname')}<input name="surname" autocomplete="family-name" maxlength="50" required value="${escapeHtml(old.surname||'')}"></label>
         <label>${t('given')}<input name="givenName" autocomplete="given-name" maxlength="50" required value="${escapeHtml(old.givenName||'')}"></label>
-        <label>${t('dob')}<input name="birthDate" type="date" required value="${escapeHtml(old.birthDate||'')}"></label>
+        <label>${t('dob')}<input name="birthDate" type="date"${departureMax?` max="${escapeHtml(departureMax)}"`:''} required value="${escapeHtml(old.birthDate||'')}"></label>
         <label>${t('gender')}<select name="gender"><option value="">${t('unspecified')}</option><option value="male"${old.gender==='male'?' selected':''}>${t('male')}</option><option value="female"${old.gender==='female'?' selected':''}>${t('female')}</option></select></label>
         ${contact?`<label class="contact-wide">${t('email')}<input name="email" type="email" autocomplete="email" required value="${escapeHtml(old.email||auth.currentUser?.email||'')}"></label><label class="contact-wide">${t('phone')}<input name="phone" type="tel" autocomplete="tel" required value="${escapeHtml(old.phone||'')}"></label>`:''}
       </div>
@@ -83,6 +85,18 @@ function render(){
   const note=section.querySelector('[data-passenger-info-note]');if(note)note.textContent=t('note');
 }
 function escapeHtml(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function parseISODate(value){
+  const match=/^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value||''));
+  if(!match)return null;
+  return new Date(Date.UTC(Number(match[1]),Number(match[2])-1,Number(match[3])));
+}
+function ageOnDate(birth,travel){
+  let age=travel.getUTCFullYear()-birth.getUTCFullYear();
+  const beforeBirthday=travel.getUTCMonth()<birth.getUTCMonth()||(travel.getUTCMonth()===birth.getUTCMonth()&&travel.getUTCDate()<birth.getUTCDate());
+  if(beforeBirthday)age-=1;
+  return age;
+}
+function daysOldOnDate(birth,travel){return Math.floor((travel.getTime()-birth.getTime())/86400000);}
 function manifest(){
   return [...host.querySelectorAll('.passenger-info-card')].map((card,index)=>({
     sequence:index+1,type:card.dataset.passengerType,
@@ -101,6 +115,21 @@ function showError(text,input){
   errorBox.textContent=text;errorBox.hidden=false;
   if(input){input.focus();input.scrollIntoView({behavior:'smooth',block:'center'});}else section.scrollIntoView({behavior:'smooth',block:'center'});
 }
+function validatePassengerAges(){
+  const travel=parseISODate(departureInput?.value);
+  if(!travel)return true;
+  for(const card of host.querySelectorAll('.passenger-info-card')){
+    const input=card.querySelector('[name="birthDate"]');
+    const birth=parseISODate(input?.value);
+    if(!birth)continue;
+    if(birth.getTime()>=travel.getTime()){showError(t('birthFuture'),input);return false;}
+    const age=ageOnDate(birth,travel),daysOld=daysOldOnDate(birth,travel),type=card.dataset.passengerType;
+    if(type==='adult'&&age<12){showError(t('adultAgeInvalid'),input);return false;}
+    if(type==='child'&&(age<2||age>=12)){showError(t('childAgeInvalid'),input);return false;}
+    if(type==='infant'&&(daysOld<7||age>=2)){showError(t('infantAgeInvalid'),input);return false;}
+  }
+  return true;
+}
 function validate(){
   errorBox.hidden=true;errorBox.textContent='';
   for(const card of host.querySelectorAll('.passenger-info-card')){
@@ -108,6 +137,7 @@ function validate(){
       if(!input.value.trim()){showError(t('required'),input);return false;}
     }
   }
+  if(!validatePassengerAges())return false;
   const email=host.querySelector('input[name="email"]');
   if(email&&!/^\S+@\S+\.\S+$/.test(email.value.trim())){showError(t('invalidEmail'),email);return false;}
   const phone=host.querySelector('input[name="phone"]');
@@ -188,6 +218,7 @@ new MutationObserver(syncVisibility).observe(confirmPanel,{attributes:true,attri
 new MutationObserver(()=>{if(!section.hidden)render();}).observe(document.querySelector('.passenger-type-grid')||document.body,{subtree:true,childList:true,characterData:true});
 if(ticketModal)new MutationObserver(syncIssuedBooking).observe(ticketModal,{attributes:true,attributeFilter:['hidden']});
 window.addEventListener('stellaris:languagechange',()=>{signature='';render();});
+departureInput?.addEventListener('change',()=>{signature='';if(!section?.hidden)render();});
 syncVisibility();
 
 document.addEventListener('click',async event=>{

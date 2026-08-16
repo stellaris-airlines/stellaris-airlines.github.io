@@ -380,7 +380,9 @@ export function quoteFare(flight,familyId,passengers=1){
     }
     :{adults:Math.max(0,Math.floor(Number(passengers)||0)),children:0,infants:0};
   const childPrice=Math.round(adultPrice*.75/1000)*1000;
-  const infantPrice=0;
+  const infantFareRate=route.kind==='domestic'?0:.1;
+  const infantPrice=Math.round(adultPrice*infantFareRate/1000)*1000;
+  const mileageEligibleTotal=adultPrice*passengerMix.adults+childPrice*passengerMix.children;
   return {
     family,
     adjustedBase,
@@ -391,8 +393,10 @@ export function quoteFare(flight,familyId,passengers=1){
     childPrice,
     infantPrice,
     childDiscountRate:.25,
+    infantFareRate,
     passengerMix,
-    total:adultPrice*passengerMix.adults+childPrice*passengerMix.children,
+    mileageEligibleTotal,
+    total:mileageEligibleTotal+infantPrice*passengerMix.infants,
     fareBasis:route.fareBasis
   };
 }

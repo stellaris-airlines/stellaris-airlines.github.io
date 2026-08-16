@@ -1,4 +1,4 @@
 /* Stellaris shared fixes entrypoint. Keep the previous visual fixes, then layer global mobile readability improvements. */
 @import url("fixes-legacy.css?v=20260816");
 @import url("responsive-readability.css?v=20260816");
-@import url("logo-mobile-fix.css?v=20260816-1249");
+@import url("logo-mobile-fix.css?v=20260816-text-brand-v1");

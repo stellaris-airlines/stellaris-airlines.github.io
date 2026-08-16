@@ -3,7 +3,7 @@ import {
   AIRPORTS, ROUTES, addMonths, availableDestinations, dateISO, fareFamilies,
   forecastOperation, getRoute, occupiedSeats, quoteFare, scheduledFlights,
   seatLayout, seatSelectionFee
-} from '../operations-model.js';
+} from '../operations-model.js?v=20260816-seat-random-v1';
 import { addDoc, collection, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 
 const TEXT={
@@ -169,7 +169,8 @@ function openSeatMap(direction){
   const flight=state.chosen[direction];if(!flight)return;
   state.activeDirection=direction;
   const count=Number(passengers.value),layout=seatLayout(flight.operation.aircraft.code,cabin.value);
-  const occupied=occupiedSeats(flight.operation.aircraft.code,cabin.value,flight.number+flight.dateISO+':'+cabin.value);
+  const seatSeed=[flight.number,flight.dateISO,flight.origin,flight.destination,flight.scheduledDeparture,cabin.value].join(':');
+  const occupied=occupiedSeats(flight.operation.aircraft.code,cabin.value,seatSeed);
   $('[data-seat-subtitle]').textContent=flight.number+' · '+flight.origin+' → '+flight.destination+' · '+flight.selectedFare.family.name+' · '+t('seatHelp',count);
   const rows=new Map();layout.forEach(seat=>{if(!rows.has(seat.row))rows.set(seat.row,[]);rows.get(seat.row).push(seat);});
   seatMap.innerHTML=[...rows.entries()].map(([row,seats])=>{

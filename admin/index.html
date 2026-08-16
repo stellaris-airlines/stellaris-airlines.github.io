@@ -8,7 +8,7 @@
   <link rel="icon" href="../assets/stellaris-symbol.png">
   <link href="https://fonts.googleapis.com/css2?family=Michroma&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../styles.css">
-  <link rel="stylesheet" href="admin.css?v=20260816-admin-v1">
+  <link rel="stylesheet" href="admin.css?v=20260816-admin-v2">
 </head>
 <body data-prefix="../" data-page="admin">
   <div id="siteHeader"></div>
@@ -30,7 +30,10 @@
         <section class="admin-panel"><div class="admin-panel-head"><div><p class="eyebrow">NOTICE MANAGER</p><h2>공지사항</h2></div><a href="../notices/" target="_blank" rel="noopener">공개 페이지 보기 →</a></div>
           <form data-notice-form class="admin-form">
             <input type="hidden" name="noticeId">
-            <div class="admin-grid"><label>분류<input type="text" name="category" maxlength="30" value="안내"></label><label class="check-row inline-check"><input type="checkbox" name="pinned"><span>중요 공지로 고정</span></label></div>
+            <div class="admin-grid">
+              <label>구분<select name="category" required><option value="일반">일반</option><option value="중요">중요</option></select></label>
+              <label>작성자<input type="text" name="author" maxlength="50" placeholder="예: 기획지원팀" required></label>
+            </div>
             <label>제목<input type="text" name="title" maxlength="120" required></label>
             <label>본문<textarea name="body" rows="7" maxlength="5000" required></textarea></label>
             <div class="admin-actions"><button class="btn btn-olive" type="submit" data-notice-submit>공지 등록</button><button class="btn btn-dark" type="button" data-notice-cancel hidden>수정 취소</button></div>
@@ -41,7 +44,7 @@
     </div></section>
   </main>
   <div id="siteFooter"></div>
-  <script src="../app.js?v=20260816-admin-v1"></script>
-  <script type="module" src="admin.js?v=20260816-admin-v1"></script>
+  <script src="../app.js?v=20260816-admin-v2"></script>
+  <script type="module" src="admin.js?v=20260816-admin-v2"></script>
 </body>
 </html>

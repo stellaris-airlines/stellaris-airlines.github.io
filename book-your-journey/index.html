@@ -41,7 +41,7 @@
               <label><span data-label-departure>출발일</span><input id="departureDate" type="date" required></label>
               <label id="returnField"><span data-label-return>귀국일</span><input id="returnDate" type="date" required></label>
               <label><span data-label-passengers>탑승객</span><select id="passengerCount"><option value="1">성인 1명</option><option value="2">성인 2명</option><option value="3">성인 3명</option><option value="4">성인 4명</option></select></label>
-              <label><span data-label-cabin>여행 클래스</span><select id="cabinClass"><option value="economy">Economy</option><option value="premium">Premium</option></select></label>
+              <label><span data-label-cabin>여행 클래스</span><select id="cabinClass"><option value="economy">Economy (Y)</option><option value="business">Business (C)</option><option value="first">First (F)</option></select></label>
             </div>
             <button class="btn btn-olive wide" id="searchFlightsButton" type="submit">항공권 검색</button>
           </form>
@@ -85,6 +85,6 @@
   </main>
   <div id="siteFooter"></div>
   <script src="../app.js"></script>
-  <script type="module" src="booking.js?v=20260816-seat-random-v1"></script>
+  <script type="module" src="booking.js?v=20260816-aircraft-layouts-v1"></script>
 </body>
 </html>

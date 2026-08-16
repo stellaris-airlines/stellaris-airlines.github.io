@@ -6,6 +6,15 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == userId;
     }
 
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email is string
+        && request.auth.token.email in [
+          'stellarisairlines@gmail.com',
+          'stellaris.web.dev@gmail.com'
+        ];
+    }
+
     function validDisplayName() {
       return request.resource.data.displayName is string
         && request.resource.data.displayName.size() >= 1
@@ -64,7 +73,6 @@ service cloud.firestore {
         && validOptionalPhotoURL()
         && request.resource.data.updatedAt == request.time;
     }
-
 
     match /bookings/{bookingId} {
       allow get, list: if request.auth != null
@@ -127,7 +135,117 @@ service cloud.firestore {
         && request.resource.data.status == 'ticketed'
         && request.resource.data.createdAt == request.time;
 
-      allow update, delete: if false;
+      allow update: if request.auth != null
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == resource.data.userId
+        && request.resource.data.status == 'ticketed'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'passengerManifest',
+          'passengerCount',
+          'leadPassengerName',
+          'contactEmail',
+          'contactPhone',
+          'passengerManifestUpdatedAt',
+          'paymentStatus',
+          'paymentMethod',
+          'paymentMode',
+          'paymentReference',
+          'paymentUpdatedAt'
+        ])
+        && (!('passengerManifest' in request.resource.data)
+          || (request.resource.data.passengerManifest is list
+            && request.resource.data.passengerManifest.size() >= 1
+            && request.resource.data.passengerManifest.size() <= 9))
+        && (!('passengerCount' in request.resource.data)
+          || (request.resource.data.passengerCount is int
+            && request.resource.data.passengerCount >= 1
+            && request.resource.data.passengerCount <= 9))
+        && (!('leadPassengerName' in request.resource.data)
+          || (request.resource.data.leadPassengerName is string
+            && request.resource.data.leadPassengerName.size() <= 120))
+        && (!('contactEmail' in request.resource.data)
+          || (request.resource.data.contactEmail is string
+            && request.resource.data.contactEmail.size() <= 254))
+        && (!('contactPhone' in request.resource.data)
+          || (request.resource.data.contactPhone is string
+            && request.resource.data.contactPhone.size() <= 40))
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['passengerManifestUpdatedAt'])
+          || request.resource.data.passengerManifestUpdatedAt == request.time)
+        && (!('paymentStatus' in request.resource.data)
+          || request.resource.data.paymentStatus == 'paid-demo')
+        && (!('paymentMethod' in request.resource.data)
+          || request.resource.data.paymentMethod in ['demo-card', 'demo-bank', 'demo-wallet'])
+        && (!('paymentMode' in request.resource.data)
+          || request.resource.data.paymentMode == 'simulation')
+        && (!('paymentReference' in request.resource.data)
+          || (request.resource.data.paymentReference is string
+            && request.resource.data.paymentReference.size() <= 40))
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['paymentUpdatedAt'])
+          || request.resource.data.paymentUpdatedAt == request.time);
+
+      allow delete: if false;
+    }
+
+    match /bookingPassengerDrafts/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create, update: if isOwner(userId)
+        && request.resource.data.keys().hasAll(['userId', 'passengers', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['userId', 'passengers', 'updatedAt', 'clearedAt'])
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.passengers is list
+        && request.resource.data.passengers.size() <= 9
+        && request.resource.data.updatedAt == request.time
+        && (!('clearedAt' in request.resource.data) || request.resource.data.clearedAt == request.time);
+      allow delete: if isOwner(userId);
+    }
+
+    match /siteContent/homeBanner {
+      allow read: if true;
+      allow create, update: if isAdmin()
+        && request.resource.data.keys().hasAll(['active', 'text', 'linkLabel', 'linkUrl', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['active', 'text', 'linkLabel', 'linkUrl', 'updatedAt'])
+        && request.resource.data.active is bool
+        && request.resource.data.text is string
+        && request.resource.data.text.size() <= 180
+        && request.resource.data.linkLabel is string
+        && request.resource.data.linkLabel.size() <= 40
+        && request.resource.data.linkUrl is string
+        && request.resource.data.linkUrl.size() <= 220
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if isAdmin();
+    }
+
+    match /notices/{noticeId} {
+      allow read: if true;
+      allow create: if isAdmin()
+        && request.resource.data.keys().hasAll(['category', 'title', 'body', 'pinned', 'publishedAt', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['category', 'title', 'body', 'pinned', 'publishedAt', 'updatedAt'])
+        && request.resource.data.category is string
+        && request.resource.data.category.size() <= 30
+        && request.resource.data.title is string
+        && request.resource.data.title.size() >= 1
+        && request.resource.data.title.size() <= 120
+        && request.resource.data.body is string
+        && request.resource.data.body.size() >= 1
+        && request.resource.data.body.size() <= 5000
+        && request.resource.data.pinned is bool
+        && request.resource.data.publishedAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      allow update: if isAdmin()
+        && request.resource.data.keys().hasOnly(['category', 'title', 'body', 'pinned', 'publishedAt', 'updatedAt'])
+        && request.resource.data.publishedAt == resource.data.publishedAt
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.category is string
+        && request.resource.data.category.size() <= 30
+        && request.resource.data.title is string
+        && request.resource.data.title.size() >= 1
+        && request.resource.data.title.size() <= 120
+        && request.resource.data.body is string
+        && request.resource.data.body.size() >= 1
+        && request.resource.data.body.size() <= 5000
+        && request.resource.data.pinned is bool;
+      allow delete: if isAdmin();
     }
 
     match /flightInventories/{flightKey}/seats/{seatId} {

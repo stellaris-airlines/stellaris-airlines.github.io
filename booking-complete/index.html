@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#a89f52">
+  <title>Booking Complete | Stellaris Airlines</title>
+  <link rel="icon" href="../assets/stellaris-symbol.png">
+  <link href="https://fonts.googleapis.com/css2?family=Michroma&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles.css">
+  <link rel="stylesheet" href="../service-pages.css?v=20260817-digital-v2">
+  <style>
+    .booking-complete-wrap{max-width:820px;margin:0 auto;padding:54px 20px 80px}
+    .booking-complete-card{background:#fff;border:1px solid rgba(0,0,0,.09);border-radius:24px;padding:34px;box-shadow:0 18px 55px rgba(0,0,0,.08)}
+    .booking-complete-card h1{margin:6px 0 12px;font-size:clamp(28px,5vw,46px)}
+    .booking-ref-box{margin:26px 0;padding:22px;border-radius:18px;background:#f5f3e8;text-align:center}
+    .booking-ref-box span{display:block;font-size:13px;letter-spacing:.12em;color:#666}
+    .booking-ref-box strong{display:block;margin-top:8px;font-family:Michroma,sans-serif;font-size:clamp(24px,5vw,38px);letter-spacing:.08em}
+    .booking-complete-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:24px 0}
+    .booking-complete-grid div{padding:16px;border:1px solid rgba(0,0,0,.08);border-radius:15px}
+    .booking-complete-grid span{display:block;font-size:12px;color:#777;margin-bottom:5px}
+    .booking-complete-grid strong{font-size:16px;word-break:break-word}
+    .sync-status{margin:18px 0;padding:14px 16px;border-radius:14px;background:#f7f7f7;color:#555}
+    .sync-status.success{background:#eef6ed;color:#2f6331}
+    .sync-status.error{background:#fff1ef;color:#8d392f}
+    .booking-complete-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
+    @media(max-width:640px){.booking-complete-card{padding:24px 18px}.booking-complete-grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body data-prefix="../" data-page="booking-complete">
+  <div id="siteHeader"></div>
+  <main class="content-section white">
+    <div class="booking-complete-wrap">
+      <section class="booking-complete-card" aria-live="polite">
+        <p class="eyebrow">BOOKING COMPLETE</p>
+        <h1>예약이 완료되었습니다.</h1>
+        <p>예약번호를 확인하세요. 서버 저장은 이 화면에서 별도로 동기화되며 화면 이동을 막지 않습니다.</p>
+        <div class="booking-ref-box"><span>RESERVATION NUMBER</span><strong data-complete-ref>확인 중…</strong></div>
+        <div class="booking-complete-grid">
+          <div><span>승객</span><strong data-complete-passenger>-</strong></div>
+          <div><span>편명</span><strong data-complete-flight>-</strong></div>
+          <div><span>여정</span><strong data-complete-route>-</strong></div>
+          <div><span>좌석</span><strong data-complete-seat>-</strong></div>
+        </div>
+        <p class="sync-status" data-sync-status>서버 예약 저장을 확인하고 있습니다…</p>
+        <div class="booking-complete-actions">
+          <a class="btn btn-olive" href="../find-your-reservations/">예약 조회</a>
+          <a class="btn btn-dark" href="../my-page/">My Page</a>
+          <button class="btn btn-dark" type="button" data-sync-retry hidden>서버 저장 다시 시도</button>
+        </div>
+      </section>
+    </div>
+  </main>
+  <div id="siteFooter"></div>
+  <script src="../app.js?v=20260817-digital-v2"></script>
+  <script type="module" src="complete.js?v=20260817-booking-complete-v1"></script>
+</body>
+</html>

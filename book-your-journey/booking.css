@@ -40,6 +40,7 @@
 .fare-choice-name{font-size:13px;font-weight:800;color:var(--ink)}
 .fare-choice-price{margin:12px 0 13px;font-size:21px;font-weight:800;letter-spacing:-.04em;color:var(--ink)}
 .fare-choice-price small{display:block;margin-top:4px;color:var(--muted);font-size:9px;font-weight:500;letter-spacing:0}
+.fare-choice-price .fare-choice-miles{margin-top:7px;color:#6f692d;font-size:9px;font-weight:800;letter-spacing:.01em}
 .fare-benefits{display:grid;gap:6px;margin:0 0 16px;padding:0;color:#62655f;font-size:10px;line-height:1.45}
 .fare-benefits>span::before{content:"✓";margin-right:6px;color:#6f692d;font-weight:900}
 .fare-choice-action{margin-top:auto;color:#6f692d;font-size:10px;font-weight:900;letter-spacing:.03em}
@@ -71,6 +72,8 @@
 .booking-confirm{position:sticky;bottom:18px;z-index:10;display:flex;align-items:center;justify-content:space-between;gap:24px;margin-top:26px;padding:22px 26px;background:var(--ink);color:#fff;box-shadow:0 20px 55px rgba(0,0,0,.24)}
 .booking-confirm p{margin:3px 0;color:rgba(255,255,255,.7);font-size:11px;line-height:1.6}
 .booking-confirm strong{display:block;margin-bottom:5px}
+.booking-confirm .booking-miles-summary{color:#d4cc79}
+.booking-confirm .booking-miles-summary b{display:inline;color:#fff}
 .booking-confirm .btn{background:var(--olive);color:var(--ink);white-space:nowrap}
 .booking-confirm .btn:disabled{opacity:.45;cursor:not-allowed}
 @media(max-width:1100px){.flight-option{grid-template-columns:1fr}.flight-summary{border-right:0;border-bottom:1px solid rgba(21,23,21,.12);padding:0 0 20px}.flight-option-grid{grid-template-columns:1fr}.seat-selection-head{align-items:flex-start;flex-direction:column}.seat-legend{justify-content:flex-start}}

@@ -1,12 +1,10 @@
-import { auth, db } from '../firebase-config.js';
-import { collection, doc, serverTimestamp, setDoc, updateDoc } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+import { auth } from '../firebase-config.js';
 
 const issueButton=document.querySelector('[data-issue-ticket]');
 const modal=document.querySelector('[data-payment-sim-modal]');
 const summary=document.querySelector('[data-payment-sim-summary]');
 const method=document.querySelector('[data-payment-sim-method]');
 const errorBox=document.querySelector('[data-payment-sim-error]');
-const ticketModal=document.querySelector('[data-ticket-modal]');
 const note=document.querySelector('[data-demo-payment-note]');
 const approveButton=document.querySelector('[data-payment-sim-approve]');
 const declineButton=document.querySelector('[data-payment-sim-decline]');
@@ -40,14 +38,13 @@ function syncLanguage(){
     });
   }
 }
-
 function setProcessing(value){
   processing=value;
   if(approveButton){approveButton.disabled=value;approveButton.textContent=value?t('processing'):t('approve');}
   if(declineButton)declineButton.disabled=value;
   if(method)method.disabled=value;
-  closeButtons.forEach(button=>{button.disabled=value;});
 }
+function showError(text){if(errorBox){errorBox.textContent=text;errorBox.hidden=false;}}
 function openPayment(){
   syncLanguage();
   if(summary)summary.textContent=document.querySelector('[data-booking-summary]')?.innerText?.trim()||'';
@@ -61,8 +58,6 @@ function closePayment(force=false){
   modal.hidden=true;
   document.body.classList.remove('payment-sim-open');
 }
-function showError(text){if(errorBox){errorBox.textContent=text;errorBox.hidden=false;}}
-function sleep(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
 function bookingReference(){
   const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',bytes=new Uint8Array(6);crypto.getRandomValues(bytes);
   return 'XS'+[...bytes].map(value=>chars[value%chars.length]).join('');
@@ -100,15 +95,11 @@ function itineraryParts(){
   const text=document.querySelector('[data-booking-summary] p')?.textContent?.trim()||'';
   return text?text.split(/\s+\/\s+/):[];
 }
-function segmentFromCard(card,part,index){
-  const bits=String(part||'').split('·').map(x=>x.trim()).filter(Boolean);
+function segmentFromPart(part,index){
   const routeMatch=String(part||'').match(/([A-Z]{3})\s*→\s*([A-Z]{3})/);
   const flightMatch=String(part||'').match(/^([A-Z0-9-]+)/);
-  const times=[...card?.querySelectorAll('.flight-route-time b')||[]].map(node=>(node.textContent.match(/\d{1,2}:\d{2}/)||[''])[0]);
-  const chip=card?.querySelector('.aircraft-chip')?.textContent||'';
-  const chipBits=chip.split('·').map(x=>x.trim());
-  const fareButton=card?.querySelector('.fare-choice.is-selected');
-  const seats=(bits.at(-1)||'').split(',').map(x=>x.trim()).filter(x=>/^\d+[A-Z]$/i.test(x));
+  const bits=String(part||'').split('·').map(value=>value.trim()).filter(Boolean);
+  const seats=(bits.at(-1)||'').split(',').map(value=>value.trim()).filter(value=>/^\d+[A-Z]$/i.test(value));
   const from=document.getElementById('fromInput')?.value||'';
   const to=document.getElementById('toInput')?.value||'';
   const round=!document.getElementById('returnField')?.hidden;
@@ -116,75 +107,55 @@ function segmentFromCard(card,part,index){
   const destination=routeMatch?.[2]||(index===0?to:from);
   return {
     direction:index===0?'outbound':'inbound',
-    flightNumber:flightMatch?.[1]||card?.querySelector('.flight-option-top strong')?.textContent?.trim()||'XS000',
+    flightNumber:flightMatch?.[1]||'XS000',
     origin,destination,
     date:index===0?(document.getElementById('departureDate')?.value||''):(round?(document.getElementById('returnDate')?.value||''):(document.getElementById('departureDate')?.value||'')),
-    departure:times[0]||'00:00',arrival:times[1]||'00:00',
-    aircraft:chipBits[1]||'',
+    departure:'00:00',arrival:'00:00',aircraft:'',
     cabin:document.getElementById('cabinClass')?.value||'economy',
-    fareFamily:fareButton?.dataset.family||'',fareName:bits[1]||'',fare:0,
+    fareFamily:'',fareName:bits[1]||'',fare:0,
     seats,seatDetails:seats.map(id=>({id,type:'standard',fee:0})),
     passengerName:'',passengerCounts:passengerCounts()
   };
 }
-function segments(){
-  const cards=[...document.querySelectorAll('.flight-option.is-selected')];
-  const parts=itineraryParts();
-  const count=Math.max(cards.length,parts.length,1);
-  return Array.from({length:count},(_,index)=>segmentFromCard(cards[index]||null,parts[index]||'',index));
-}
-function bookingSnapshot(reference){
+function bookingSnapshot(reference,payment){
   const user=auth.currentUser;
   const passengerList=manifest();
   const lead=passengerList.find(item=>item.type==='adult')||passengerList[0]||{};
-  const segs=segments().map(segment=>({...segment,passengerName:passengerName(lead)}));
-  const totalFare=integerFromText(document.querySelector('[data-booking-summary] p:nth-of-type(2) b')?.textContent||document.querySelector('[data-booking-summary] p:nth-of-type(2)')?.textContent||'');
-  const milesEarned=integerFromText(document.querySelector('.booking-miles-summary b')?.textContent||'');
+  const parts=itineraryParts();
+  const segmentList=(parts.length?parts:['']).map((part,index)=>segmentFromPart(part,index)).map(segment=>({...segment,passengerName:passengerName(lead)}));
   const selectedCabin=document.getElementById('cabinClass')?.value||'economy';
   return {
     bookingRef:reference,userId:user.uid,email:user.email||'',
-    origin:segs[0]?.origin||document.getElementById('fromInput')?.value||'',
-    destination:segs.at(-1)?.destination||document.getElementById('toInput')?.value||'',
-    flightNumber:segs[0]?.flightNumber||'XS000',segments:segs,
+    origin:segmentList[0]?.origin||document.getElementById('fromInput')?.value||'',
+    destination:segmentList.at(-1)?.destination||document.getElementById('toInput')?.value||'',
+    flightNumber:segmentList[0]?.flightNumber||'XS000',segments:segmentList,
     passengers:Math.max(1,passengerList.length||Number(document.getElementById('passengerCount')?.value||1)),
-    cabin:selectedCabin==='economy'?'economy':'premium',totalFare,currency:'KRW',milesEarned,status:'ticketed',
-    _manifest:passengerList,_lead:lead
+    cabin:selectedCabin==='economy'?'economy':'premium',
+    totalFare:integerFromText(document.querySelector('[data-booking-summary] p:nth-of-type(2)')?.textContent||''),
+    currency:'KRW',
+    milesEarned:integerFromText(document.querySelector('.booking-miles-summary')?.textContent||''),
+    status:'ticketed',
+    passengerManifest:passengerList,
+    passengerCount:Math.max(1,passengerList.length||Number(document.getElementById('passengerCount')?.value||1)),
+    leadPassengerName:passengerName(lead),
+    contactEmail:lead.email||user.email||'',
+    contactPhone:lead.phone||'',
+    paymentStatus:'paid-demo',paymentMethod:payment.method,paymentMode:'simulation',paymentReference:payment.reference,
+    createdAt:new Date().toISOString()
   };
 }
-function saveLocal(data,payment){
+function saveBooking(data){
   try{
     const list=JSON.parse(localStorage.getItem('stellaris-bookings-v1')||'[]');
-    list.unshift({...data,passengerManifest:data._manifest,passengerCount:data.passengers,leadPassengerName:passengerName(data._lead),contactEmail:data._lead?.email||data.email,contactPhone:data._lead?.phone||'',paymentStatus:'paid-demo',paymentMethod:payment.method,paymentMode:'simulation',paymentReference:payment.reference,createdAt:new Date().toISOString()});
-    localStorage.setItem('stellaris-bookings-v1',JSON.stringify(list.slice(0,50)));
-  }catch(error){}
-}
-function publicBookingData(data){
-  const clone={...data};delete clone._manifest;delete clone._lead;return clone;
-}
-async function syncServer(data,payment){
-  const bookingRef=doc(collection(db,'bookings'));
-  await setDoc(bookingRef,{...publicBookingData(data),createdAt:serverTimestamp()});
-  const lead=data._lead||{};
-  const payload={
-    paymentStatus:'paid-demo',paymentMethod:payment.method,paymentMode:'simulation',paymentReference:payment.reference,paymentUpdatedAt:serverTimestamp(),
-    passengerManifest:data._manifest||[],passengerCount:data.passengers,leadPassengerName:passengerName(lead),contactEmail:lead.email||data.email,contactPhone:lead.phone||'',passengerManifestUpdatedAt:serverTimestamp()
-  };
-  await updateDoc(bookingRef,payload);
-  return bookingRef.id;
-}
-function showTicket(data){
-  if(!ticketModal)return;
-  const lead=data._lead||{};
-  document.querySelector('[data-ticket-ref]').textContent=data.bookingRef;
-  document.querySelector('[data-ticket-passenger]').textContent=passengerName(lead)||auth.currentUser?.displayName||auth.currentUser?.email||'';
-  document.querySelector('[data-ticket-flight]').textContent=data.segments.map(segment=>segment.flightNumber).join(' / ');
-  document.querySelector('[data-ticket-seat]').textContent=data.segments.map(segment=>segment.flightNumber+' · '+(segment.seats.join(', ')||'-')).join(' / ');
-  ticketModal.hidden=false;
-  document.body.classList.add('ticket-modal-open');
+    const filtered=Array.isArray(list)?list.filter(item=>item.bookingRef!==data.bookingRef):[];
+    filtered.unshift(data);
+    localStorage.setItem('stellaris-bookings-v1',JSON.stringify(filtered.slice(0,50)));
+  }catch(error){console.warn('Local booking save failed.',error);}
+  try{sessionStorage.setItem('stellaris-pending-booking',JSON.stringify(data));}catch(error){}
 }
 
-// Passenger-info.js validates and marks the first click, then re-clicks the issue button.
-// This handler owns only that second click so the old Firestore ticketing transaction is bypassed.
+// Passenger-info.js validates the first click, marks passengerManifestReady, then re-clicks.
+// This capture handler owns only that validated second click and opens the simple checkout.
 document.addEventListener('click',event=>{
   const button=event.target.closest('[data-issue-ticket]');
   if(!button)return;
@@ -192,7 +163,8 @@ document.addEventListener('click',event=>{
   if(passengerSection&&!passengerSection.hidden&&button.dataset.passengerManifestReady!=='true')return;
   const confirm=document.querySelector('[data-booking-confirm]');
   if(confirm?.hidden)return;
-  event.preventDefault();event.stopImmediatePropagation();
+  event.preventDefault();
+  event.stopImmediatePropagation();
   if(!auth.currentUser){openPayment();showError(t('login'));return;}
   openPayment();
 },true);
@@ -201,7 +173,7 @@ closeButtons.forEach(button=>button.addEventListener('click',()=>closePayment())
 modal?.addEventListener('click',event=>{if(event.target===modal)closePayment();});
 declineButton?.addEventListener('click',()=>closePayment());
 
-approveButton?.addEventListener('click',async()=>{
+approveButton?.addEventListener('click',()=>{
   if(processing)return;
   if(!auth.currentUser){showError(t('login'));return;}
   setProcessing(true);
@@ -209,22 +181,22 @@ approveButton?.addEventListener('click',async()=>{
 
   const payment={status:'paid-demo',method:method?.value||'demo-card',reference:demoReference()};
   const reference=bookingReference();
-  const data=bookingSnapshot(reference);
-  window.STELLARIS_DEMO_PAYMENT=payment;
-  localStorage.setItem('stellaris-demo-payment-v1',JSON.stringify(payment));
-  saveLocal(data,payment);
+  let data;
+  try{
+    data=bookingSnapshot(reference,payment);
+    saveBooking(data);
+    localStorage.setItem('stellaris-demo-payment-v1',JSON.stringify(payment));
+  }catch(error){
+    console.error('Checkout snapshot failed.',error);
+    data={bookingRef:reference,userId:auth.currentUser.uid,email:auth.currentUser.email||'',segments:[],passengers:1,cabin:'economy',totalFare:0,currency:'KRW',milesEarned:0,status:'ticketed',passengerManifest:[],paymentStatus:'paid-demo',paymentMethod:payment.method,paymentMode:'simulation',paymentReference:payment.reference,createdAt:new Date().toISOString()};
+    saveBooking(data);
+  }
 
-  // Start server synchronization immediately, but never make the user wait on it.
-  const serverSync=syncServer(data,payment).catch(error=>{
-    console.warn('Background booking sync failed; local confirmation remains available.',error);
-    return null;
-  });
-
-  await sleep(1000);
-  setProcessing(false);
-  closePayment(true);
-  showTicket(data);
-  void serverSync;
+  window.setTimeout(()=>{
+    setProcessing(false);
+    closePayment(true);
+    window.location.assign(`../booking-complete/?booking=${encodeURIComponent(reference)}`);
+  },1000);
 });
 
 window.addEventListener('stellaris:languagechange',syncLanguage);

@@ -1,5 +1,6 @@
 import { auth } from './firebase-config.js';
-import './site-content.js?v=20260816-banner-v1';
+import './site-content.js?v=20260817-digital-v1';
+import './digital-services.js?v=20260817-digital-v1';
 import {
   browserLocalPersistence,
   onAuthStateChanged,
@@ -63,14 +64,7 @@ function installNoticeShortcut(){
     link.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 13.5V10a1 1 0 0 1 1-1H8l7-3.5v12L8 14H5.5a1 1 0 0 1-1-1Zm3.5.5 1.2 4.1a1 1 0 0 0 1 .7h1.4l-1.5-4.8M17.5 8.5a4.5 4.5 0 0 1 0 6"/></svg><span class="sr-only">공지사항</span>';
     language.insertAdjacentElement('afterend',link);
   }
-  Object.assign(link.style,{
-    display:'inline-flex',
-    alignItems:'center',
-    justifyContent:'center',
-    flex:'0 0 40px',
-    width:'40px',
-    height:'40px'
-  });
+  Object.assign(link.style,{display:'inline-flex',alignItems:'center',justifyContent:'center',flex:'0 0 40px',width:'40px',height:'40px'});
   const label=(accountLabels[currentLanguage()]||accountLabels.ko).notices;
   link.setAttribute('aria-label',label);link.setAttribute('title',label);
 }
@@ -79,14 +73,17 @@ function installExtendedNavigation() {
   const travelMenu=[...document.querySelectorAll('.mega-title strong')].find(el=>el.textContent.trim()==='여행 준비')?.closest('.mega-inner')?.querySelector('.mega-links');
   const supportMenu=[...document.querySelectorAll('.mega-title strong')].find(el=>el.textContent.trim()==='지원 센터')?.closest('.mega-inner')?.querySelector('.mega-links');
   addLinkOnce(travelMenu,seatsHref,'좌석 안내');
+  addLinkOnce(travelMenu,rootHref('check-in/'),'온라인 체크인');
   addLinkOnce(supportMenu,noticesHref,'공지사항');
   const mobile=document.getElementById('mobileNav');
   addLinkOnce(mobile,seatsHref,'좌석 안내');
+  addLinkOnce(mobile,rootHref('check-in/'),'온라인 체크인');
+  addLinkOnce(mobile,rootHref('my-page/'),'My Page');
   addLinkOnce(mobile,noticesHref,'공지사항');
   const footerColumns=document.querySelectorAll('.footer-columns>div');
   footerColumns.forEach(column=>{
     const title=column.querySelector('strong')?.textContent.trim();
-    if(title==='서비스')addLinkOnce(column,seatsHref,'좌석 안내');
+    if(title==='서비스'){addLinkOnce(column,seatsHref,'좌석 안내');addLinkOnce(column,rootHref('check-in/'),'온라인 체크인');}
     if(title==='지원')addLinkOnce(column,noticesHref,'공지사항');
   });
   const copyright=document.querySelector('.footer-bottom>span');
@@ -116,6 +113,7 @@ function renderUser(user) {
     element.textContent = user.displayName || user.email || 'Stellaris Member';
   });
   logoutElements().forEach((element) => { element.hidden = false; });
+  document.querySelectorAll('[data-mypage-tool]').forEach(element=>{element.hidden=false;});
   installAdminLink(user);translateAccountNavigation();installExtendedNavigation();
 }
 

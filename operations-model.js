@@ -364,21 +364,35 @@ export function fareFamilies(cabin){
   return FARE_FAMILIES[cabin]||FARE_FAMILIES.economy;
 }
 
-export function quoteFare(flight,familyId,passengerCount=1){
+export function quoteFare(flight,familyId,passengers=1){
   const route=getRoute(flight.origin,flight.destination);
   if(!route)throw new Error('Unknown route');
   const family=Object.values(FARE_FAMILIES).flat().find(item=>item.id===familyId);
   if(!family)throw new Error('Unknown fare family');
   const operation=flight.operation||forecastOperation(flight);
   const adjustedBase=Math.round(route.baseFare*operation.marketFactor*family.multiplier/1000)*1000;
-  const pricePerPassenger=adjustedBase+route.fuel+route.taxes;
+  const adultPrice=adjustedBase+route.fuel+route.taxes;
+  const passengerMix=typeof passengers==='object'
+    ?{
+      adults:Math.max(0,Math.floor(Number(passengers.adults)||0)),
+      children:Math.max(0,Math.floor(Number(passengers.children)||0)),
+      infants:Math.max(0,Math.floor(Number(passengers.infants)||0))
+    }
+    :{adults:Math.max(0,Math.floor(Number(passengers)||0)),children:0,infants:0};
+  const childPrice=Math.round(adultPrice*.75/1000)*1000;
+  const infantPrice=0;
   return {
     family,
     adjustedBase,
     fuelSurcharge:route.fuel,
     taxes:route.taxes,
-    pricePerPassenger,
-    total:pricePerPassenger*Number(passengerCount),
+    pricePerPassenger:adultPrice,
+    adultPrice,
+    childPrice,
+    infantPrice,
+    childDiscountRate:.25,
+    passengerMix,
+    total:adultPrice*passengerMix.adults+childPrice*passengerMix.children,
     fareBasis:route.fareBasis
   };
 }

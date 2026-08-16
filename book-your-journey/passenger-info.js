@@ -1,10 +1,20 @@
 import { auth, db } from '../firebase-config.js';
-import { doc, serverTimestamp, setDoc } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+import {
+  collection,
+  doc,
+  getDocs,
+  query,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+  where
+} from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 
 const section=document.querySelector('[data-passenger-information]');
 const host=document.querySelector('[data-passenger-manifest]');
 const errorBox=document.querySelector('[data-passenger-info-error]');
 const confirmPanel=document.querySelector('[data-booking-confirm]');
+const ticketModal=document.querySelector('[data-ticket-modal]');
 const passengerCountInput=document.getElementById('passengerCount');
 const counts=()=>({
   adults:Number(document.querySelector('[data-passenger-count="adults"]')?.textContent||1),
@@ -26,6 +36,8 @@ const lang=()=>{const code=localStorage.getItem('stellaris-language')||'ko';retu
 const t=key=>I18N[lang()][key];
 
 let signature='';
+let lastManifest=[];
+let lastAttachedReference='';
 function passengerPlan(){
   const c=counts(),list=[];
   for(let i=0;i<c.adults;i++)list.push({type:'adult',index:i+1});
@@ -82,6 +94,9 @@ function manifest(){
     phone:card.querySelector('[name="phone"]')?.value.trim()||''
   }));
 }
+function passengerFullName(passenger){
+  return [passenger?.givenName,passenger?.surname].filter(Boolean).join(' ').trim();
+}
 function showError(text,input){
   errorBox.textContent=text;errorBox.hidden=false;
   if(input){input.focus();input.scrollIntoView({behavior:'smooth',block:'center'});}else section.scrollIntoView({behavior:'smooth',block:'center'});
@@ -100,6 +115,7 @@ function validate(){
   return true;
 }
 async function persistDraft(data){
+  lastManifest=data;
   localStorage.setItem('stellaris-passenger-manifest-v1',JSON.stringify(data));
   window.STELLARIS_PASSENGER_MANIFEST=data;
   const user=auth.currentUser;
@@ -107,6 +123,59 @@ async function persistDraft(data){
   try{
     await setDoc(doc(db,'bookingPassengerDrafts',user.uid),{userId:user.uid,passengers:data,updatedAt:serverTimestamp()},{merge:true});
   }catch(error){/* local copy remains available if draft rules are not enabled */}
+}
+function updateLocalBooking(reference,data){
+  try{
+    const bookings=JSON.parse(localStorage.getItem('stellaris-bookings-v1')||'[]');
+    const index=bookings.findIndex(item=>item.bookingRef===reference);
+    if(index<0)return;
+    bookings[index]={...bookings[index],...data};
+    localStorage.setItem('stellaris-bookings-v1',JSON.stringify(bookings));
+  }catch(error){}
+}
+async function attachManifestToIssuedBooking(reference){
+  const user=auth.currentUser;
+  const data=lastManifest.length?lastManifest:(window.STELLARIS_PASSENGER_MANIFEST||[]);
+  if(!user||!reference||!data.length||lastAttachedReference===reference)return;
+  const lead=data.find(item=>item.type==='adult')||data[0];
+  const payload={
+    passengerManifest:data,
+    passengerCount:data.length,
+    leadPassengerName:passengerFullName(lead),
+    contactEmail:lead?.email||user.email||'',
+    contactPhone:lead?.phone||'',
+    passengerManifestUpdatedAt:serverTimestamp()
+  };
+  try{
+    const snapshot=await getDocs(query(
+      collection(db,'bookings'),
+      where('userId','==',user.uid),
+      where('bookingRef','==',reference)
+    ));
+    const booking=snapshot.docs[0];
+    if(!booking)return;
+    await updateDoc(booking.ref,payload);
+    lastAttachedReference=reference;
+    updateLocalBooking(reference,{
+      passengerManifest:data,
+      passengerCount:data.length,
+      leadPassengerName:payload.leadPassengerName,
+      contactEmail:payload.contactEmail,
+      contactPhone:payload.contactPhone
+    });
+    const ticketPassenger=document.querySelector('[data-ticket-passenger]');
+    if(ticketPassenger){
+      const names=data.map(passengerFullName).filter(Boolean);
+      ticketPassenger.textContent=names.join(' / ');
+    }
+  }catch(error){
+    console.warn('Passenger manifest could not be attached to booking.',error);
+  }
+}
+function syncIssuedBooking(){
+  if(!ticketModal||ticketModal.hidden)return;
+  const reference=document.querySelector('[data-ticket-ref]')?.textContent?.trim()||'';
+  if(reference)void attachManifestToIssuedBooking(reference);
 }
 function syncVisibility(){
   if(!section||!confirmPanel)return;
@@ -117,6 +186,7 @@ function syncVisibility(){
 
 new MutationObserver(syncVisibility).observe(confirmPanel,{attributes:true,attributeFilter:['hidden']});
 new MutationObserver(()=>{if(!section.hidden)render();}).observe(document.querySelector('.passenger-type-grid')||document.body,{subtree:true,childList:true,characterData:true});
+if(ticketModal)new MutationObserver(syncIssuedBooking).observe(ticketModal,{attributes:true,attributeFilter:['hidden']});
 window.addEventListener('stellaris:languagechange',()=>{signature='';render();});
 syncVisibility();
 

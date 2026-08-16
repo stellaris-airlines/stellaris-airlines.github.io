@@ -72,3 +72,20 @@
   background:var(--ink);
   transform:none;
 }
+
+/* Upcoming destinations: keep airport codes small and aligned with names. */
+.upcoming strong small{
+  display:inline-block;
+  margin-left:6px;
+  font-family:"Michroma",sans-serif;
+  font-size:.42em;
+  font-weight:600;
+  letter-spacing:.06em;
+  vertical-align:.18em;
+}
+
+/* Prevent awkward mid-word wrapping in footer navigation labels. */
+.footer-columns a{
+  word-break:keep-all;
+  overflow-wrap:normal;
+}

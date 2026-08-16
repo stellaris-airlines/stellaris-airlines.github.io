@@ -1,23 +1,25 @@
 import { auth, db } from '../firebase-config.js';
 import {
   AIRPORTS, ROUTES, addMonths, availableDestinations, dateISO, fareFamilies,
-  forecastOperation, getRoute, occupiedSeats, quoteFare, scheduledFlights,
+  forecastOperation, getRoute, progressiveUnavailableSeats, quoteFare, scheduledFlights,
   seatLayout, seatSelectionFee
-} from '../operations-model.js?v=20260816-aircraft-layouts-v1';
-import { addDoc, collection, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+} from '../operations-model.js?v=20260816-live-ticketing-v1';
+import {
+  collection, doc, getDoc, onSnapshot, runTransaction, serverTimestamp, Timestamp
+} from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 
 const TEXT={
   ko:{
     round:'왕복',oneway:'편도',origin:'출발지',destination:'도착지',departure:'출발일',return:'귀국일',passengers:'탑승객',cabin:'여행 클래스',adult:n=>'성인 '+n+'명',economy:'Economy (Y)',business:'Business (C)',first:'First (F)',search:'항공권 검색',
     window:(a,b)=>a+'부터 '+b+'까지 예약할 수 있습니다.',fareNote:'표시 운임은 성인 1인 편도 기준이며 세금과 유류할증료를 포함합니다.',choose:'항공편과 운임 선택',resultsNote:'편명과 시각은 공개된 스텔라리스 정기 운항 스케줄을 사용합니다.',outbound:'가는 편',inbound:'오는 편',
-    aircraft:'운항 기종',perAdult:'성인 1인 · 편도',selectFare:'이 운임 선택',selected:'선택됨',seatTitle:'좌석 선택',standard:'일반 좌석',front:'앞쪽 좌석',extra:'넓은 좌석',occupied:'선택 불가',selectedSeat:'선택 좌석',seatHelp:n=>n+'개의 좌석을 선택하세요.',
-    seatIncluded:'운임에 포함',seatFee:'좌석 선택 요금',seatNone:'선택한 좌석이 없습니다.',issue:'선택한 여정 발권',summary:'선택한 여정',login:'발권하려면 먼저 로그인해야 합니다.',loginLink:'로그인하기',invalidDate:'예약 가능한 날짜 범위를 확인해 주세요.',returnDate:'귀국일은 출발일보다 늦어야 합니다.',noFlights:'선택한 노선의 운항편이 없습니다.',noCabin:'선택한 여행 클래스가 제공되는 항공편이 없습니다.',seatCount:n=>n+'석',chooseAll:'각 여정의 운임과 좌석을 모두 선택해 주세요.',issuing:'발권 정보를 저장하고 있습니다…',issued:ref=>'발권이 완료되었습니다. 예약번호: '+ref,local:'발권은 완료되었으며 이 기기에 저장되었습니다.',fare:'항공 운임',seatTotal:'좌석 요금',total:'총 결제 예정 금액',miles:'적립 예정',estimatedMiles:'예상 적립 Star Miles',schedule:'정기 운항편',dayAfter:n=>'+'+n+'일'
+    aircraft:'운항 기종',perAdult:'성인 1인 · 편도',selectFare:'이 운임 선택',selected:'선택됨',seatTitle:'좌석 선택',standard:'일반 좌석',front:'앞쪽 좌석',extra:'넓은 좌석',occupied:'발권·선택 중',systemBlocked:'운영 제한',selectedSeat:'내 선택',seatHelp:n=>n+'개의 좌석을 선택하세요.',
+    seatIncluded:'운임에 포함',seatFee:'좌석 선택 요금',seatNone:'선택한 좌석이 없습니다.',issue:'선택한 여정 발권',summary:'선택한 여정',login:'발권하려면 먼저 로그인해야 합니다.',loginLink:'로그인하기',invalidDate:'예약 가능한 날짜 범위를 확인해 주세요.',returnDate:'귀국일은 출발일보다 늦어야 합니다.',noFlights:'선택한 노선의 운항편이 없습니다.',noCabin:'선택한 여행 클래스가 제공되는 항공편이 없습니다.',seatCount:n=>n+'석',chooseAll:'각 여정의 운임과 좌석을 모두 선택해 주세요.',seatUnavailable:'다른 승객이 먼저 선택했거나 현재 선택할 수 없는 좌석입니다.',seatLimit:n=>'좌석은 '+n+'개까지 선택할 수 있습니다.',seatSyncError:'좌석 현황을 불러오지 못했습니다. 로그인 상태와 네트워크를 확인해 주세요.',holdNotice:'선택한 좌석은 15분 동안 임시로 확보됩니다.',issuing:'Firestore에 발권 정보를 저장하고 있습니다…',issued:ref=>'발권이 완료되었습니다. 예약번호: '+ref,ticketFailed:'발권에 실패했습니다. 선택한 좌석을 다시 확인해 주세요.',ticketComplete:'발권이 완료되었습니다!',bookingNumber:'예약번호',passengerName:'승객 이름',flightNumber:'편명',seatLabel:'좌석',close:'확인',passengerGroup:(name,count)=>count>1?name+' 외 '+(count-1)+'명':name,fare:'항공 운임',seatTotal:'좌석 요금',total:'총 결제 예정 금액',miles:'적립 예정',estimatedMiles:'예상 적립 Star Miles',schedule:'정기 운항편',dayAfter:n=>'+'+n+'일'
   },
   'en-US':{
     round:'Round trip',oneway:'One way',origin:'From',destination:'To',departure:'Departure',return:'Return',passengers:'Passengers',cabin:'Travel class',adult:n=>n+' adult'+(n>1?'s':''),economy:'Economy (Y)',business:'Business (C)',first:'First (F)',search:'Search flights',
     window:(a,b)=>'Booking is open from '+a+' through '+b+'.',fareNote:'Displayed prices are one-way per adult and include taxes and fuel surcharge.',choose:'Choose flights and fares',resultsNote:'Flight numbers and times follow the published Stellaris timetable.',outbound:'Outbound',inbound:'Return',
-    aircraft:'Aircraft',perAdult:'Per adult · one way',selectFare:'Select this fare',selected:'Selected',seatTitle:'Select seats',standard:'Standard seat',front:'Front zone',extra:'Extra legroom',occupied:'Unavailable',selectedSeat:'Selected',seatHelp:n=>'Select '+n+' seat'+(n>1?'s':'')+'.',
-    seatIncluded:'Included in fare',seatFee:'Seat selection fee',seatNone:'No seats selected.',issue:'Issue selected itinerary',summary:'Selected itinerary',login:'Sign in before issuing a ticket.',loginLink:'Sign in',invalidDate:'Check the available booking dates.',returnDate:'The return date must be after departure.',noFlights:'No flights operate on this route.',noCabin:'No flights offer the selected travel class.',seatCount:n=>n+' seats',chooseAll:'Select a fare and all required seats for each flight.',issuing:'Saving your ticket…',issued:ref=>'Ticket issued. Booking reference: '+ref,local:'The ticket was issued and saved on this device.',fare:'Air fare',seatTotal:'Seat fees',total:'Estimated total',miles:'Miles to earn',estimatedMiles:'Estimated Star Miles',schedule:'Scheduled service',dayAfter:n=>'+'+n+' day'+(n>1?'s':'')
+    aircraft:'Aircraft',perAdult:'Per adult · one way',selectFare:'Select this fare',selected:'Selected',seatTitle:'Select seats',standard:'Standard seat',front:'Front zone',extra:'Extra legroom',occupied:'Held or ticketed',systemBlocked:'Operationally restricted',selectedSeat:'Your selection',seatHelp:n=>'Select '+n+' seat'+(n>1?'s':'')+'.',
+    seatIncluded:'Included in fare',seatFee:'Seat selection fee',seatNone:'No seats selected.',issue:'Issue selected itinerary',summary:'Selected itinerary',login:'Sign in before issuing a ticket.',loginLink:'Sign in',invalidDate:'Check the available booking dates.',returnDate:'The return date must be after departure.',noFlights:'No flights operate on this route.',noCabin:'No flights offer the selected travel class.',seatCount:n=>n+' seats',chooseAll:'Select a fare and all required seats for each flight.',seatUnavailable:'Another passenger selected this seat or it is no longer available.',seatLimit:n=>'You can select up to '+n+' seat'+(n>1?'s':'')+'.',seatSyncError:'Could not load live seat availability. Check your sign-in and network connection.',holdNotice:'Selected seats are held for 15 minutes.',issuing:'Saving your ticket to Firestore…',issued:ref=>'Ticket issued. Booking reference: '+ref,ticketFailed:'Ticketing failed. Check your selected seats and try again.',ticketComplete:'Ticketing complete!',bookingNumber:'Booking reference',passengerName:'Passenger name',flightNumber:'Flight',seatLabel:'Seat',close:'OK',passengerGroup:(name,count)=>count>1?name+' and '+(count-1)+' more':name,fare:'Air fare',seatTotal:'Seat fees',total:'Estimated total',miles:'Miles to earn',estimatedMiles:'Estimated Star Miles',schedule:'Scheduled service',dayAfter:n=>'+'+n+' day'+(n>1?'s':'')
   }
 };
 TEXT['en-GB']=TEXT['en-US'];TEXT['zh-CN']=TEXT['en-US'];TEXT.ja=TEXT['en-US'];TEXT.es=TEXT['en-US'];TEXT.fr=TEXT['en-US'];
@@ -51,7 +53,14 @@ const form=$('#bookingSearchForm'),from=$('#fromInput'),to=$('#toInput'),depart=
 const passengers=$('#passengerCount'),cabin=$('#cabinClass'),returnField=$('#returnField'),message=$('[data-booking-message]');
 const results=$('[data-flight-results]'),outboundHost=$('[data-outbound-results]'),returnHost=$('[data-return-results]');
 const seatSection=$('[data-seat-selection]'),seatMap=$('[data-seat-map]'),seatFeeSummary=$('[data-seat-fee-summary]'),confirmPanel=$('[data-booking-confirm]');
-const state={mode:'round',options:{outbound:[],inbound:[]},chosen:{outbound:null,inbound:null},seats:{outbound:[],inbound:[]},activeDirection:null};
+const HOLD_MS=15*60*1000;
+const state={
+  mode:'round',options:{outbound:[],inbound:[]},chosen:{outbound:null,inbound:null},
+  seats:{outbound:[],inbound:[]},activeDirection:null,seatBusy:false,
+  inventory:{outbound:new Map(),inbound:new Map()},
+  inventoryKeys:{outbound:null,inbound:null},
+  inventoryUnsubscribe:{outbound:null,inbound:null}
+};
 
 function airportName(code){const item=AIRPORTS[code];return lang()==='ko'?item.nameKo:item.nameEn;}
 function money(value){return new Intl.NumberFormat(lang()==='ko'?'ko-KR':'en-US',{style:'currency',currency:'KRW',maximumFractionDigits:0}).format(value);}
@@ -76,6 +85,13 @@ function translateStatic(){
   $('[data-seat-title]').textContent=t('seatTitle');$('[data-seat-standard]').textContent=t('standard');
   $('[data-seat-front]').textContent=t('front');$('[data-seat-extra]').textContent=t('extra');
   $('[data-seat-occupied]').textContent=t('occupied');$('[data-seat-selected]').textContent=t('selectedSeat');
+  const translatedElements=[
+    ['[data-seat-system]','systemBlocked'],['[data-seat-hold-note]','holdNotice'],
+    ['[data-ticket-complete]','ticketComplete'],['[data-ticket-label-ref]','bookingNumber'],
+    ['[data-ticket-label-passenger]','passengerName'],['[data-ticket-label-flight]','flightNumber'],
+    ['[data-ticket-label-seat]','seatLabel'],['[data-ticket-close]','close']
+  ];
+  translatedElements.forEach(([selector,key])=>{const element=$(selector);if(element)element.textContent=t(key);});
   $('[data-issue-ticket]').textContent=t('issue');
 }
 
@@ -101,12 +117,61 @@ function setDates(){
   $('[data-booking-window]').textContent=t('window',min,maximum);
 }
 
-function resetSelection(clearResults=false){
+function selectedCabin(flight){return flight?.selectedCabin||cabin.value;}
+
+function inventoryKey(flight){
+  return [flight.dateISO,flight.number,flight.origin,flight.destination,selectedCabin(flight)]
+    .join('_').replace(/[^A-Za-z0-9_-]/g,'');
+}
+
+function seatReference(flight,seatId){
+  return doc(db,'flightInventories',inventoryKey(flight),'seats',seatId);
+}
+
+function timestampMillis(value){
+  return value&&typeof value.toMillis==='function'?value.toMillis():0;
+}
+
+function isActiveInventorySeat(data){
+  return data?.status==='ticketed'||(data?.status==='held'&&timestampMillis(data.holdExpiresAt)>Date.now());
+}
+
+function stopInventory(direction){
+  if(typeof state.inventoryUnsubscribe[direction]==='function')state.inventoryUnsubscribe[direction]();
+  state.inventoryUnsubscribe[direction]=null;state.inventoryKeys[direction]=null;
+  state.inventory[direction]=new Map();
+}
+
+async function releaseSeatHold(flight,seatId){
+  const user=auth.currentUser;if(!user||!flight)return;
+  const reference=seatReference(flight,seatId);
+  try{
+    await runTransaction(db,async transaction=>{
+      const snapshot=await transaction.get(reference);
+      if(!snapshot.exists())return;
+      const data=snapshot.data();
+      if(data.status==='held'&&data.ownerId===user.uid)transaction.delete(reference);
+    });
+  }catch(error){}
+}
+
+async function releaseDirectionHolds(direction){
+  const flight=state.chosen[direction],seatIds=[...state.seats[direction]];
+  await Promise.all(seatIds.map(seatId=>releaseSeatHold(flight,seatId)));
+  state.seats[direction]=[];
+}
+
+async function releaseAllHolds(){
+  await Promise.all(['outbound','inbound'].map(direction=>releaseDirectionHolds(direction)));
+}
+
+function resetSelection(clearResults=false,releaseHolds=true){
+  if(releaseHolds)void releaseAllHolds();
+  ['outbound','inbound'].forEach(stopInventory);
   state.chosen={outbound:null,inbound:null};state.seats={outbound:[],inbound:[]};state.activeDirection=null;
   seatSection.hidden=true;confirmPanel.hidden=true;
   if(clearResults)results.hidden=true;
 }
-
 function setMode(mode){
   state.mode=mode;
   document.querySelectorAll('[data-booking-tab]').forEach(button=>{
@@ -153,7 +218,7 @@ function renderResults(){
 
 function chosenSeatDetails(direction){
   const flight=state.chosen[direction];if(!flight)return [];
-  const layout=seatLayout(flight.operation.aircraft.code,cabin.value);
+  const layout=seatLayout(flight.operation.aircraft.code,selectedCabin(flight));
   return state.seats[direction].map(id=>{
     const seat=layout.find(item=>item.id===id);
     const type=seat?.type||'standard';
@@ -171,25 +236,66 @@ function renderSeatFeeSummary(){
   seatFeeSummary.innerHTML='<span>'+list+'</span><strong>'+t('seatFee')+' · '+money(directionSeatFees(direction))+'</strong>';
 }
 
-function openSeatMap(direction){
+function subscribeSeatInventory(direction,flight){
+  const key=inventoryKey(flight);
+  if(state.inventoryKeys[direction]===key)return;
+  stopInventory(direction);state.inventoryKeys[direction]=key;
+  const user=auth.currentUser;if(!user)return;
+  const seatCollection=collection(db,'flightInventories',key,'seats');
+  state.inventoryUnsubscribe[direction]=onSnapshot(seatCollection,snapshot=>{
+    const next=new Map();
+    snapshot.forEach(item=>{const data=item.data();if(isActiveInventorySeat(data))next.set(item.id,data);});
+    state.inventory[direction]=next;
+    const count=Number(passengers.value);
+    const retained=state.seats[direction].filter(id=>{
+      const data=next.get(id);
+      return !data||(data.status==='held'&&data.ownerId===user.uid);
+    });
+    const mine=[...next.entries()]
+      .filter(([,data])=>data.status==='held'&&data.ownerId===user.uid)
+      .map(([id])=>id);
+    state.seats[direction]=[...new Set([...retained,...mine])].slice(0,count);
+    if(state.activeDirection===direction)renderSeatMap(direction);
+  },()=>showMessage(t('seatSyncError'),'error'));
+}
+
+function renderSeatMap(direction,shouldScroll=false){
   const flight=state.chosen[direction];if(!flight)return;
-  state.activeDirection=direction;
-  const count=Number(passengers.value),layout=seatLayout(flight.operation.aircraft.code,cabin.value);
-  const seatSeed=[flight.number,flight.dateISO,flight.origin,flight.destination,flight.departure,cabin.value].join(':');
-  const occupied=occupiedSeats(flight.operation.aircraft.code,cabin.value,seatSeed);
-  $('[data-seat-subtitle]').textContent=flight.number+' · '+flight.origin+' → '+flight.destination+' · '+flight.operation.aircraft.code+' · '+cabinCode(cabin.value)+' '+t('seatCount',layout.length)+' · '+t('seatHelp',count);
+  const selectedClass=selectedCabin(flight);
+  const count=Number(passengers.value),layout=seatLayout(flight.operation.aircraft.code,selectedClass);
+  const seatSeed=[flight.number,flight.dateISO,flight.origin,flight.destination,flight.departure,selectedClass].join(':');
+  const systemUnavailable=progressiveUnavailableSeats(
+    flight.operation.aircraft.code,selectedClass,flight.dateISO,seatSeed
+  );
+  const inventory=state.inventory[direction],user=auth.currentUser;
+  state.seats[direction]=state.seats[direction].filter(id=>{
+    const data=inventory.get(id);
+    return !data||(data.status==='held'&&data.ownerId===user?.uid&&isActiveInventorySeat(data));
+  });
+  $('[data-seat-subtitle]').textContent=flight.number+' · '+flight.origin+' → '+flight.destination+' · '+flight.operation.aircraft.code+' · '+cabinCode(selectedClass)+' '+t('seatCount',layout.length)+' · '+t('seatHelp',count);
   const rows=new Map();layout.forEach(seat=>{if(!rows.has(seat.row))rows.set(seat.row,[]);rows.get(seat.row).push(seat);});
   seatMap.innerHTML=[...rows.entries()].map(([row,seats])=>{
     const buttons=seats.map(seat=>{
       const aisle=seat.aisleBefore?'<span class="seat-aisle" aria-hidden="true"></span>':'';
-      const selected=state.seats[direction].includes(seat.id),blocked=occupied.has(seat.id);
+      const selected=state.seats[direction].includes(seat.id),remote=inventory.get(seat.id);
+      const mine=remote?.status==='held'&&remote.ownerId===user?.uid;
+      const inventoryBlocked=Boolean(remote)&&!(selected&&mine);
+      const systemBlocked=systemUnavailable.has(seat.id)&&!selected;
+      const blocked=inventoryBlocked||systemBlocked;
       const fee=seatSelectionFee(flight.kind,flight.selectedFare.family.id,seat.type);
-      const title=seat.id+' · '+seatTypeLabel(seat.type)+' · '+(fee?'+'+money(fee):t('seatIncluded'));
-      return aisle+'<button class="seat-button type-'+seat.type+(blocked?' is-occupied':'')+(selected?' is-selected':'')+'" type="button" data-seat="'+seat.id+'" title="'+title+'" '+(blocked?'disabled':'')+'>'+seat.id+'</button>';
+      const availability=inventoryBlocked?t('occupied'):systemBlocked?t('systemBlocked'):'';
+      const title=seat.id+' · '+seatTypeLabel(seat.type)+' · '+(fee?'+'+money(fee):t('seatIncluded'))+(availability?' · '+availability:'');
+      return aisle+'<button class="seat-button type-'+seat.type+(inventoryBlocked?' is-occupied':'')+(systemBlocked?' is-system-blocked':'')+(selected?' is-selected':'')+'" type="button" data-seat="'+seat.id+'" title="'+title+'" '+(blocked||state.seatBusy?'disabled':'')+'>'+seat.id+'</button>';
     }).join('');
     return '<div class="seat-row"><span class="seat-row-number">'+row+'</span>'+buttons+'</div>';
   }).join('');
-  seatSection.hidden=false;renderSeatFeeSummary();renderConfirm();seatSection.scrollIntoView({behavior:'smooth',block:'start'});
+  seatSection.hidden=false;renderSeatFeeSummary();renderConfirm();
+  if(shouldScroll)seatSection.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function openSeatMap(direction){
+  const flight=state.chosen[direction];if(!flight)return;
+  state.activeDirection=direction;subscribeSeatInventory(direction,flight);renderSeatMap(direction,true);
 }
 
 function renderConfirm(){
@@ -207,19 +313,63 @@ function renderConfirm(){
   const issueButton=$('[data-issue-ticket]');issueButton.disabled=false;issueButton.dataset.ready=String(ready);
 }
 
-function chooseFare(direction,index,familyId){
+async function chooseFare(direction,index,familyId){
+  await releaseDirectionHolds(direction);stopInventory(direction);
   const flight=state.options[direction][index];
-  state.chosen[direction]={...flight,selectedFare:quoteFare(flight,familyId,Number(passengers.value))};
+  state.chosen[direction]={...flight,selectedCabin:cabin.value,selectedFare:quoteFare(flight,familyId,Number(passengers.value))};
   state.seats[direction]=[];renderResults();openSeatMap(direction);
 }
 
-function selectSeat(id){
-  const direction=state.activeDirection;if(!direction)return;
-  const list=state.seats[direction],count=Number(passengers.value),index=list.indexOf(id);
-  if(index>=0)list.splice(index,1);else if(list.length<count)list.push(id);else{list.shift();list.push(id);}
-  openSeatMap(direction);
+function seatSelectionError(code){
+  const error=new Error(code);error.code=code;return error;
 }
 
+async function claimSeatHold(flight,seatId){
+  const user=auth.currentUser;if(!user)throw seatSelectionError('login-required');
+  const reference=seatReference(flight,seatId),expiresAt=Timestamp.fromMillis(Date.now()+HOLD_MS);
+  await runTransaction(db,async transaction=>{
+    const snapshot=await transaction.get(reference);
+    if(snapshot.exists()){
+      const data=snapshot.data();
+      if(data.status==='ticketed')throw seatSelectionError('seat-unavailable');
+      if(data.status==='held'&&data.ownerId!==user.uid&&timestampMillis(data.holdExpiresAt)>Date.now()){
+        throw seatSelectionError('seat-unavailable');
+      }
+    }
+    const flightKey=inventoryKey(flight);
+    transaction.set(reference,{
+      flightKey,flightNumber:flight.number,date:flight.dateISO,origin:flight.origin,destination:flight.destination,
+      aircraft:flight.operation.aircraft.code,cabin:selectedCabin(flight),seatId,status:'held',ownerId:user.uid,
+      holdExpiresAt:expiresAt,updatedAt:serverTimestamp()
+    });
+  });
+}
+
+async function selectSeat(id){
+  const direction=state.activeDirection,flight=state.chosen[direction];if(!direction||!flight||state.seatBusy)return;
+  const user=auth.currentUser;
+  if(!user){showMessage(t('login')+' <a href="../login/">'+t('loginLink')+'</a>','error');return;}
+  const list=state.seats[direction],index=list.indexOf(id);
+  state.seatBusy=true;
+  try{
+    if(index>=0){
+      await releaseSeatHold(flight,id);list.splice(index,1);
+    }else{
+      if(list.length>=Number(passengers.value)){showMessage(t('seatLimit',Number(passengers.value)),'error');return;}
+      const selectedClass=selectedCabin(flight);
+      const seed=[flight.number,flight.dateISO,flight.origin,flight.destination,flight.departure,selectedClass].join(':');
+      if(progressiveUnavailableSeats(flight.operation.aircraft.code,selectedClass,flight.dateISO,seed).has(id)){
+        throw seatSelectionError('seat-unavailable');
+      }
+      await claimSeatHold(flight,id);if(!list.includes(id))list.push(id);
+      showMessage(t('holdNotice'),'success');
+    }
+  }catch(error){
+    showMessage(error.code==='login-required'?t('login'):error.code==='seat-unavailable'?t('seatUnavailable'):t('seatSyncError'),'error');
+  }finally{
+    state.seatBusy=false;renderSeatMap(direction);renderResults();
+  }
+}
 function bookingReference(){
   const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',bytes=new Uint8Array(6);crypto.getRandomValues(bytes);
   return 'XS'+[...bytes].map(value=>chars[value%chars.length]).join('');
@@ -230,17 +380,36 @@ function saveLocal(data){
   list.unshift({...data,createdAt:new Date().toISOString()});localStorage.setItem('stellaris-bookings-v1',JSON.stringify(list.slice(0,50)));
 }
 
+async function passengerDisplayName(user){
+  if(user.displayName?.trim())return user.displayName.trim();
+  try{
+    const snapshot=await getDoc(doc(db,'users',user.uid));
+    const name=snapshot.data()?.displayName;if(name?.trim())return name.trim();
+  }catch(error){}
+  return (user.email?.split('@')[0]||'Stellaris Member').trim();
+}
+
+function showTicketModal(reference,name,segments,passengerCount){
+  const modal=$('[data-ticket-modal]');if(!modal)return;
+  $('[data-ticket-ref]').textContent=reference;
+  $('[data-ticket-passenger]').textContent=t('passengerGroup',name,passengerCount);
+  $('[data-ticket-flight]').textContent=segments.map(segment=>segment.flightNumber).join(' / ');
+  $('[data-ticket-seat]').textContent=segments.map(segment=>segment.flightNumber+' · '+segment.seats.join(', ')).join(' / ');
+  modal.hidden=false;document.body.classList.add('ticket-modal-open');
+}
+
 async function issueTicket(){
   const required=['outbound',...(state.mode==='round'?['inbound']:[])];
   if(!required.every(direction=>state.chosen[direction]&&state.seats[direction].length===Number(passengers.value))){showMessage(t('chooseAll'),'error');return;}
   const user=auth.currentUser;if(!user){showMessage(t('login')+' <a href="../login/">'+t('loginLink')+'</a>','error');return;}
+  const name=await passengerDisplayName(user);
   const segments=required.map(direction=>{
     const flight=state.chosen[direction],seatDetails=chosenSeatDetails(direction);
     return {
       direction,flightNumber:flight.number,origin:flight.origin,destination:flight.destination,date:flight.dateISO,
       departure:flight.departure,arrival:flight.arrival,aircraft:flight.operation.aircraft.code,
-      cabin:cabin.value,fareFamily:flight.selectedFare.family.id,fareName:flight.selectedFare.family.name,
-      fare:flight.selectedFare.total,seats:seatDetails.map(seat=>seat.id),seatDetails
+      cabin:selectedCabin(flight),fareFamily:flight.selectedFare.family.id,fareName:flight.selectedFare.family.name,
+      fare:flight.selectedFare.total,seats:seatDetails.map(seat=>seat.id),seatDetails,passengerName:name
     };
   });
   const fareTotal=required.reduce((sum,direction)=>sum+state.chosen[direction].selectedFare.total,0);
@@ -249,15 +418,42 @@ async function issueTicket(){
   const milesEarned=required.reduce((sum,direction)=>{
     const flight=state.chosen[direction];return sum+estimatedMiles(flight,flight.selectedFare);
   },0);
-  const reference=bookingReference();
+  const reference=bookingReference(),bookingDocument=doc(collection(db,'bookings'));
   const firestoreCabin=cabin.value==='economy'?'economy':'premium';
   const data={bookingRef:reference,userId:user.uid,email:user.email||'',origin:from.value,destination:to.value,flightNumber:segments[0].flightNumber,segments,passengers:Number(passengers.value),cabin:firestoreCabin,totalFare,currency:'KRW',milesEarned,status:'ticketed'};
+  const seatEntries=required.flatMap(direction=>{
+    const flight=state.chosen[direction];
+    return state.seats[direction].map(seatId=>({direction,flight,seatId,reference:seatReference(flight,seatId)}));
+  });
   $('[data-issue-ticket]').disabled=true;showMessage(t('issuing'));
-  let cloudSaved=false;
-  try{await addDoc(collection(db,'bookings'),{...data,createdAt:serverTimestamp()});cloudSaved=true;}catch(error){}
-  saveLocal(data);showMessage(t('issued',reference)+(cloudSaved?'':' '+t('local')),'success');
+  try{
+    await runTransaction(db,async transaction=>{
+      const snapshots=[];
+      for(const entry of seatEntries)snapshots.push(await transaction.get(entry.reference));
+      snapshots.forEach((snapshot,index)=>{
+        const seat=snapshot.data(),entry=seatEntries[index];
+        if(!snapshot.exists()||seat.status!=='held'||seat.ownerId!==user.uid||timestampMillis(seat.holdExpiresAt)<=Date.now()){
+          throw seatSelectionError('seat-unavailable');
+        }
+        const selectedClass=selectedCabin(entry.flight);
+        const seed=[entry.flight.number,entry.flight.dateISO,entry.flight.origin,entry.flight.destination,entry.flight.departure,selectedClass].join(':');
+        if(progressiveUnavailableSeats(entry.flight.operation.aircraft.code,selectedClass,entry.flight.dateISO,seed).has(entry.seatId)){
+          throw seatSelectionError('seat-unavailable');
+        }
+      });
+      transaction.set(bookingDocument,{...data,createdAt:serverTimestamp()});
+      seatEntries.forEach(entry=>transaction.update(entry.reference,{
+        status:'ticketed',bookingId:bookingDocument.id,bookingRef:reference,updatedAt:serverTimestamp()
+      }));
+    });
+    saveLocal(data);showMessage(t('issued',reference),'success');
+    showTicketModal(reference,name,segments,Number(passengers.value));
+    state.seats={outbound:[],inbound:[]};resetSelection(true,false);
+  }catch(error){
+    showMessage(error.code==='seat-unavailable'?t('seatUnavailable'):t('ticketFailed'),'error');
+    renderConfirm();
+  }
 }
-
 translateStatic();populateOrigins('ICN');setDates();setMode('round');
 document.querySelectorAll('[data-booking-tab]').forEach(button=>button.addEventListener('click',()=>setMode(button.dataset.bookingTab)));
 from.addEventListener('change',()=>{populateDestinations();resetSelection(true);});
@@ -277,7 +473,9 @@ form.addEventListener('submit',event=>{
   if(!state.options.outbound.length||(state.mode==='round'&&!state.options.inbound.length)){showMessage(t('noCabin'),'error');return;}
   renderResults();results.scrollIntoView({behavior:'smooth',block:'start'});
 });
-results.addEventListener('click',event=>{const button=event.target.closest('[data-choose-fare]');if(button)chooseFare(button.dataset.chooseFare,Number(button.dataset.index),button.dataset.family);});
-seatMap.addEventListener('click',event=>{const button=event.target.closest('[data-seat]');if(button&&!button.disabled)selectSeat(button.dataset.seat);});
+results.addEventListener('click',async event=>{const button=event.target.closest('[data-choose-fare]');if(button)await chooseFare(button.dataset.chooseFare,Number(button.dataset.index),button.dataset.family);});
+seatMap.addEventListener('click',async event=>{const button=event.target.closest('[data-seat]');if(button&&!button.disabled)await selectSeat(button.dataset.seat);});
 $('[data-issue-ticket]').addEventListener('click',issueTicket);
-window.addEventListener('stellaris:languagechange',()=>location.reload());
+document.querySelectorAll('[data-ticket-close]').forEach(button=>button.addEventListener('click',()=>{const modal=$('[data-ticket-modal]');if(modal)modal.hidden=true;document.body.classList.remove('ticket-modal-open');}));
+window.setInterval(()=>{if(state.activeDirection)renderSeatMap(state.activeDirection);},30000);
+window.addEventListener('stellaris:languagechange',()=>{void releaseAllHolds().finally(()=>location.reload());});

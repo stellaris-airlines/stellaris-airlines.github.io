@@ -45,7 +45,7 @@
             </div>
             <button class="btn btn-olive wide" id="searchFlightsButton" type="submit">항공권 검색</button>
           </form>
-          <div class="booking-meta"><p class="booking-window" data-booking-window></p><p data-fare-note>표시 운임은 성인 1인 편도 기준이며 세금과 유류할증료를 포함합니다.</p></div>
+          <div class="booking-meta"><p class="booking-window" data-booking-window></p><p data-fare-note>표시 운임은 선택한 전체 일행의 편도 합계이며 세금과 유류할증료를 포함합니다.</p></div>
           <div class="booking-message" data-booking-message hidden></div>
         </div>
 
@@ -92,7 +92,7 @@
         <article class="passenger-type"><div><strong data-passenger-child>소아·아동</strong><span class="help-dot" title="만 2세~만 12세 미만">?</span><small data-passenger-child-age>만 2세~만 12세 미만</small></div><div class="passenger-counter"><button type="button" data-passenger-type="children" data-passenger-action="-1" aria-label="소아 감소">−</button><b data-passenger-count="children">0</b><button type="button" data-passenger-type="children" data-passenger-action="1" aria-label="소아 증가">＋</button></div></article>
         <article class="passenger-type"><div><strong data-passenger-infant>유아</strong><span class="help-dot" title="생후 7일~만 2세 미만">?</span><small data-passenger-infant-age>생후 7일~만 2세 미만</small></div><div class="passenger-counter"><button type="button" data-passenger-type="infants" data-passenger-action="-1" aria-label="유아 감소">−</button><b data-passenger-count="infants">0</b><button type="button" data-passenger-type="infants" data-passenger-action="1" aria-label="유아 증가">＋</button></div></article>
       </div>
-      <p class="passenger-policy">유아는 무료이며 좌석을 사용하지 않습니다. 소아·아동 운임은 성인 운임에서 25% 할인됩니다.</p>
+      <p class="passenger-policy" data-passenger-policy>유아는 좌석을 사용하지 않으며 국내선은 무료, 국제선은 성인 정상 운임의 10%입니다. 소아·아동 운임은 성인 운임에서 25% 할인됩니다.</p>
       <button class="btn btn-dark passenger-done" type="button" data-passenger-close data-passenger-done>선택 완료</button>
     </section>
   </div>
@@ -114,6 +114,6 @@
 
   <div id="siteFooter"></div>
   <script src="../app.js"></script>
-  <script type="module" src="booking.js?v=20260816-passenger-fares-v1"></script>
+  <script type="module" src="booking.js?v=20260816-live-ticketing-v2"></script>
 </body>
 </html>

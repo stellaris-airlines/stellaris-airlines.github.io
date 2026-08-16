@@ -438,6 +438,27 @@ export function occupiedSeats(aircraftCode,cabin,seed){
   return new Set(shuffled.slice(0,count));
 }
 
+export function progressiveUnavailableSeats(aircraftCode,cabin,travelDateISO,seed){
+  const seats=seatLayout(aircraftCode,cabin);
+  const travelDate=new Date(travelDateISO+'T12:00:00');
+  const today=new Date();today.setHours(12,0,0,0);
+  const daysOut=Math.ceil((travelDate-today)/86400000);
+  if(daysOut>90)return new Set();
+  const progress=Math.max(0,Math.min(1,(90-daysOut)/90));
+  const maximumRate=cabin==='first'?.55:cabin==='business'?.68:.8;
+  const count=Math.min(
+    Math.max(0,seats.length-8),
+    Math.floor(seats.length*maximumRate*Math.pow(progress,1.12))
+  );
+  const random=seededRandom(seed+':progressive');
+  const shuffled=seats.map(seat=>seat.id);
+  for(let index=shuffled.length-1;index>0;index--){
+    const target=Math.floor(random()*(index+1));
+    [shuffled[index],shuffled[target]]=[shuffled[target],shuffled[index]];
+  }
+  return new Set(shuffled.slice(0,count));
+}
+
 export function seatSelectionFee(kind,familyId,seatType){
   if(familyId.startsWith('business-')||familyId.startsWith('first-'))return 0;
   const international=kind==='international';

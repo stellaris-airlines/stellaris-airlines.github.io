@@ -8,16 +8,22 @@
   <link rel="icon" href="../assets/stellaris-symbol.png">
   <link href="https://fonts.googleapis.com/css2?family=Michroma&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../styles.css">
-  <link rel="stylesheet" href="notices.css?v=20260816-notices-v1">
+  <link rel="stylesheet" href="notices.css?v=20260816-notices-v2">
 </head>
 <body data-prefix="../" data-page="notices">
   <div id="siteHeader"></div>
   <main>
     <section class="page-hero compact-hero"><div class="shell"><div class="breadcrumbs"><a href="../">홈</a><span>/</span><span>공지사항</span></div><div class="page-hero-grid"><div><p class="eyebrow">NOTICE</p><h1>Stellaris<br>updates.</h1></div><p>운항, 예약, 서비스와 관련된 스텔라리스항공의 주요 공지를 확인하세요.</p></div></div></section>
-    <section class="content-section white"><div class="shell notice-shell"><div class="section-head"><div><p class="eyebrow">LATEST NOTICE</p><h2>공지사항</h2></div></div><div class="notice-list" data-notice-list><p class="notice-loading">공지사항을 불러오고 있습니다…</p></div></div></section>
+    <section class="content-section white"><div class="shell notice-shell">
+      <div class="section-head"><div><p class="eyebrow">LATEST NOTICE</p><h2>공지사항</h2></div></div>
+      <div class="notice-table" aria-label="공지사항 목록">
+        <div class="notice-table-head" role="row"><span>구분</span><span>제목</span><span>작성자</span><span>날짜</span></div>
+        <div class="notice-table-body" data-notice-list><p class="notice-loading">공지사항을 불러오고 있습니다…</p></div>
+      </div>
+    </div></section>
   </main>
   <div id="siteFooter"></div>
-  <script src="../app.js?v=20260816-notices-v1"></script>
-  <script type="module" src="notices.js?v=20260816-notices-v1"></script>
+  <script src="../app.js?v=20260816-notices-v2"></script>
+  <script type="module" src="notices.js?v=20260816-notices-v2"></script>
 </body>
 </html>

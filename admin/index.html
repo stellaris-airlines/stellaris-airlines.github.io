@@ -8,43 +8,41 @@
   <link rel="icon" href="../assets/stellaris-symbol.png">
   <link href="https://fonts.googleapis.com/css2?family=Michroma&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../styles.css">
-  <link rel="stylesheet" href="admin.css?v=20260816-admin-v3">
+  <link rel="stylesheet" href="../service-pages.css?v=20260817-digital-v1">
+  <link rel="stylesheet" href="admin.css?v=20260817-admin-v4">
 </head>
 <body data-prefix="../" data-page="admin">
   <div id="siteHeader"></div>
   <main>
-    <section class="page-hero compact-hero"><div class="shell"><div class="breadcrumbs"><a href="../">홈</a><span>/</span><span>관리자</span></div><div class="page-hero-grid"><div><p class="eyebrow">ADMIN CONSOLE</p><h1>Content<br>control.</h1></div><p>홈페이지 상단 배너와 공지사항을 관리합니다.</p></div></div></section>
+    <section class="page-hero compact-hero"><div class="shell"><div class="breadcrumbs"><a href="../">홈</a><span>/</span><span>관리자</span></div><div class="page-hero-grid"><div><p class="eyebrow">ADMIN CONSOLE</p><h1>Operations<br>control.</h1></div><p>홈 콘텐츠, 공지사항, 운항 현황과 예약 데이터를 통합 관리합니다.</p></div></div></section>
     <section class="content-section white"><div class="shell admin-shell">
       <div class="admin-gate" data-admin-gate><strong>관리자 확인 중…</strong><p>로그인 상태와 관리자 권한을 확인하고 있습니다.</p></div>
       <div data-admin-console hidden>
         <div class="admin-status" data-admin-status></div>
-        <section class="admin-panel"><div class="admin-panel-head"><div><p class="eyebrow">HOME BANNER</p><h2>홈페이지 상단 배너</h2></div><span>Firestore · siteContent/homeBanner</span></div>
-          <form data-banner-form class="admin-form">
-            <label class="check-row"><input type="checkbox" name="active" checked><span>배너 표시</span></label>
-            <label>배너 문구<input type="text" name="text" maxlength="180" required></label>
-            <div class="admin-grid"><label>링크 버튼 문구<input type="text" name="linkLabel" maxlength="40" placeholder="좌석 안내"></label><label>링크 주소<input type="text" name="linkUrl" maxlength="220" placeholder="seats/"></label></div>
-            <button class="btn btn-olive" type="submit">배너 저장</button>
-          </form>
+
+        <section class="admin-panel"><div class="admin-panel-head"><div><p class="eyebrow">HOME BANNER</p><h2>홈페이지 상단 배너</h2></div><span>siteContent/homeBanner</span></div>
+          <form data-banner-form class="admin-form"><label class="check-row"><input type="checkbox" name="active" checked><span>배너 표시</span></label><label>배너 문구<input type="text" name="text" maxlength="180" required></label><div class="admin-grid"><label>링크 버튼 문구<input type="text" name="linkLabel" maxlength="40"></label><label>링크 주소<input type="text" name="linkUrl" maxlength="220"></label></div><button class="btn btn-olive" type="submit">배너 저장</button></form>
+        </section>
+
+        <section class="admin-panel"><div class="admin-panel-head"><div><p class="eyebrow">HOME EXPERIENCE</p><h2>홈 운영 콘텐츠</h2></div><span>siteContent/homeExperience</span></div>
+          <form data-home-form class="admin-form"><label>Hero 제목<input name="heroTitle" maxlength="100"></label><label>Hero 설명<textarea name="heroBody" rows="3" maxlength="400"></textarea></label><div class="admin-grid"><label>프로모션 제목<input name="promotionTitle" maxlength="80"></label><label>추천 노선 제목<input name="routeTitle" maxlength="80"></label></div><div class="admin-grid"><label>프로모션 내용<textarea name="promotionBody" rows="3" maxlength="500"></textarea></label><label>추천 노선 내용<textarea name="routeBody" rows="3" maxlength="500"></textarea></label></div><label class="check-row"><input type="checkbox" name="popupActive"><span>홈 팝업 표시</span></label><div class="admin-grid"><label>팝업 제목<input name="popupTitle" maxlength="80"></label><label>팝업 내용<input name="popupBody" maxlength="300"></label></div><button class="btn btn-olive" type="submit">홈 콘텐츠 저장</button></form>
+        </section>
+
+        <section class="admin-panel"><div class="admin-panel-head"><div><p class="eyebrow">FLIGHT OPERATIONS</p><h2>운항편 운영</h2></div><a href="../flight-information/#flight-status" target="_blank" rel="noopener">공개 운항현황 →</a></div>
+          <form data-operation-form class="admin-form"><input type="hidden" name="operationId"><div class="admin-grid"><label>운항일<input type="date" name="date" required></label><label>편명<input name="flightNumber" placeholder="XS201" maxlength="12" required></label></div><div class="admin-grid"><label>출발지<input name="origin" maxlength="4" placeholder="ICN" required></label><label>도착지<input name="destination" maxlength="4" placeholder="NYC" required></label></div><div class="admin-grid"><label>출발 예정<input type="time" name="scheduledDeparture" required></label><label>예상 출발<input type="time" name="estimatedDeparture"></label></div><div class="admin-grid"><label>상태<select name="status"><option>정상 운항 예정</option><option>탑승 준비</option><option>탑승 중</option><option>지연</option><option>출발</option><option>도착</option><option>취소</option></select></label><label>지연(분)<input type="number" name="delayMinutes" min="0" max="1440" value="0"></label></div><div class="admin-grid"><label>Gate<input name="gate" maxlength="20"></label><label>Terminal<input name="terminal" maxlength="30"></label></div><div class="admin-grid"><label>Boarding Time<input type="time" name="boardingTime"></label><label>기종<input name="aircraft" maxlength="30"></label></div><div class="admin-actions"><button class="btn btn-olive" type="submit">운항 정보 저장</button><button class="btn btn-dark" type="button" data-operation-cancel hidden>수정 취소</button></div></form><div class="admin-ops-list" data-operation-list></div>
+        </section>
+
+        <section class="admin-panel"><div class="admin-panel-head"><div><p class="eyebrow">BOOKING DESK</p><h2>예약 검색</h2></div><span>관리자 전용</span></div><form data-booking-search class="admin-form"><div class="admin-grid"><label>예약번호<input name="bookingRef" maxlength="12" placeholder="XSABC123"></label><label>회원 이메일<input name="email" type="email" placeholder="member@example.com"></label></div><button class="btn btn-dark" type="submit">예약 검색</button></form><div class="admin-booking-result" data-booking-result></div>
         </section>
 
         <section class="admin-panel"><div class="admin-panel-head"><div><p class="eyebrow">NOTICE MANAGER</p><h2>공지사항</h2></div><a href="../notices/" target="_blank" rel="noopener">공개 페이지 보기 →</a></div>
-          <form data-notice-form class="admin-form">
-            <input type="hidden" name="noticeId">
-            <div class="admin-grid">
-              <label>구분<select name="category" required><option value="일반">일반</option><option value="중요">중요</option></select></label>
-              <label>작성자<input type="text" name="author" maxlength="50" placeholder="예: 기획지원팀" required></label>
-            </div>
-            <label>제목<input type="text" name="title" maxlength="120" required></label>
-            <label>본문<textarea name="body" rows="7" maxlength="5000" required></textarea></label>
-            <div class="admin-actions"><button class="btn btn-olive" type="submit" data-notice-submit>공지 등록</button><button class="btn btn-dark" type="button" data-notice-cancel hidden>수정 취소</button></div>
-          </form>
-          <div class="admin-notice-list" data-admin-notice-list><p>공지사항을 불러오고 있습니다…</p></div>
+          <form data-notice-form class="admin-form"><input type="hidden" name="noticeId"><div class="admin-grid"><label>구분<select name="category" required><option value="일반">일반</option><option value="중요">중요</option></select></label><label>작성자<input type="text" name="author" maxlength="50" required></label></div><div class="admin-grid"><label>게시 상태<select name="status"><option value="published">게시</option><option value="draft">초안</option></select></label><label>게시 시작<input type="datetime-local" name="publishStart"></label></div><label>게시 종료(선택)<input type="datetime-local" name="publishEnd"></label><label>제목<input type="text" name="title" maxlength="120" required></label><label>본문<textarea name="body" rows="7" maxlength="5000" required></textarea></label><div class="admin-actions"><button class="btn btn-olive" type="submit" data-notice-submit>공지 등록</button><button class="btn btn-dark" type="button" data-notice-cancel hidden>수정 취소</button></div></form><div class="admin-notice-list" data-admin-notice-list></div>
         </section>
       </div>
     </div></section>
   </main>
   <div id="siteFooter"></div>
-  <script src="../app.js?v=20260816-admin-v3"></script>
-  <script type="module" src="admin.js?v=20260816-admin-v3"></script>
+  <script src="../app.js?v=20260817-admin-v4"></script>
+  <script type="module" src="admin.js?v=20260817-admin-v4"></script>
 </body>
 </html>

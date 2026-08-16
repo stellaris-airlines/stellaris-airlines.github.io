@@ -10,6 +10,11 @@
   line-height:1;
 }
 
+/* Static HTML contains a real text fallback, while the visible lockup is rendered consistently here. */
+.brand-text-logo{
+  display:none !important;
+}
+
 .site-header .brand-symbol-image,
 .site-header .brand-wordmark-image,
 .site-footer .brand-symbol-image,

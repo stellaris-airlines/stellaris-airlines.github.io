@@ -8,11 +8,20 @@ service cloud.firestore {
 
     function isAdmin() {
       return request.auth != null
-        && request.auth.token.email is string
-        && request.auth.token.email in [
-          'stellarisairlines@gmail.com',
-          'stellaris.web.dev@gmail.com'
-        ];
+        && (
+          (
+            request.auth.token.email is string
+            && request.auth.token.email in [
+              'stellarisairlines@gmail.com',
+              'stellaris.web.dev@gmail.com'
+            ]
+          )
+          ||
+          (
+            exists(/databases/$(database)/documents/users/$(request.auth.uid))
+            && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+          )
+        );
     }
 
     function validDisplayName() {

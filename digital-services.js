@@ -6,8 +6,10 @@ if(!document.querySelector('link[data-digital-services-style]')){const style=doc
 const page=document.body.dataset.page||'';
 function root(path=''){return new URL(path,import.meta.url).href;}
 function addNavLink(host,path,label,marker){
-  if(!host||[...host.querySelectorAll('a')].some(a=>a.dataset[marker]))return;
-  const a=document.createElement('a');a.href=root(path);a.textContent=label;a.dataset[marker]='true';host.appendChild(a);
+  if(!host)return;
+  const href=root(path);
+  if([...host.querySelectorAll('a')].some(a=>a.href===href||a.dataset[marker]))return;
+  const a=document.createElement('a');a.href=href;a.textContent=label;a.dataset[marker]='true';host.appendChild(a);
 }
 function installServiceNavigation(){
   const mobile=document.getElementById('mobileNav');
@@ -17,7 +19,7 @@ function installServiceNavigation(){
   const userTools=document.querySelector('.header-tools');
   if(userTools&&!userTools.querySelector('[data-mypage-tool]')){
     const login=userTools.querySelector('[data-auth-user]');
-    if(login){const a=document.createElement('a');a.href=root('my-page/');a.textContent='My Page';a.dataset.mypageTool='true';a.hidden=login.hidden;login.insertAdjacentElement('afterend',a);}
+    if(login&&!userTools.querySelector(`a[href="${root('my-page/')}"]`)){const a=document.createElement('a');a.href=root('my-page/');a.textContent='My Page';a.dataset.mypageTool='true';a.hidden=login.hidden;login.insertAdjacentElement('afterend',a);}
   }
 }
 installServiceNavigation();
@@ -81,8 +83,15 @@ if(page==='book-your-journey')installTicketEnhancement();
 function renderLiveOps(items,panel){
   panel.innerHTML=`<div class="shell"><div class="section-head"><div><p class="eyebrow">LIVE OPERATIONS</p><h2>운항 현황</h2></div><p>관리자 운항 데이터와 연결된 현재 운영 정보입니다.</p></div><div class="live-ops-board">${items.length?items.map(item=>`<div class="live-op-row"><strong>${escapeHtml(item.flightNumber||'')}</strong><div><b>${escapeHtml(item.origin||'')} → ${escapeHtml(item.destination||'')}</b><br><small>${escapeHtml(item.date||'')} · ${escapeHtml(item.scheduledDeparture||'')}</small></div><span class="service-status">${escapeHtml(item.status||'정상 운항 예정')}</span><span>Gate ${escapeHtml(item.gate||'TBD')}</span><span>${item.delayMinutes?`+${Number(item.delayMinutes)}분`:'정시'}</span></div>`).join(''):'<div class="service-message">관리자가 등록한 운항 현황이 아직 없습니다. 공개 정기 운항 스케줄을 확인해 주세요.</div>'}</div></div>`;
 }
+function ensureStatusPanel(){
+  let panel=document.querySelector('[data-flight-panel="status"]');
+  if(panel)return panel;
+  panel=document.createElement('section');panel.className='content-section white flight-tab-panel';panel.id='flight-status';panel.dataset.flightPanel='status';
+  const tabs=document.querySelector('.flight-section-tabs-wrap');if(tabs)tabs.insertAdjacentElement('afterend',panel);else document.querySelector('main')?.appendChild(panel);
+  return panel;
+}
 function installLiveOperations(){
-  const panel=document.querySelector('[data-flight-panel="status"]');if(!panel)return;
+  const panel=ensureStatusPanel();if(!panel)return;
   onSnapshot(collection(db,'flightOperations'),snap=>{const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());const items=snap.docs.map(d=>({id:d.id,...d.data()})).filter(x=>!x.date||x.date>=today).sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||String(a.scheduledDeparture||'').localeCompare(String(b.scheduledDeparture||''))).slice(0,30);renderLiveOps(items,panel);},()=>renderLiveOps([],panel));
 }
 if(page==='flight-information')installLiveOperations();

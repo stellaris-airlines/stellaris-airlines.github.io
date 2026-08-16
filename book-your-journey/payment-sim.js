@@ -182,7 +182,7 @@ declineButton?.addEventListener('click',()=>{
   if(errorBox){errorBox.textContent=t('declined');errorBox.hidden=false;}
 });
 
-approveButton?.addEventListener('click',()=>{
+approveButton?.addEventListener('click',async()=>{
   if(processing)return;
   if(!auth.currentUser){
     showPaymentError(t('login'));
@@ -203,26 +203,34 @@ approveButton?.addEventListener('click',()=>{
   issueButton.dataset.passengerManifestReady='true';
   issueButton.disabled=false;
 
-  // Keep the approval modal visible while the actual Firestore ticket transaction runs.
-  // Using the next task avoids the payment-button event stack and prevents interceptor loops.
-  setTimeout(()=>{
-    try{
-      issueButton.click();
-    }catch(error){
-      finishFailure(error?.message||'');
-    }
-  },0);
-
   processingTimer=setTimeout(()=>{
     if(!processing)return;
     const detail=!bookingMessage?.hidden?bookingMessage.textContent.trim():'';
     if(detail&&bookingMessage.classList.contains('error'))finishFailure(detail);
-    else{
-      setProcessing(false);
-      resetIssueFlags();
-      showPaymentError(t('timeout'));
+    else finishFailure(t('timeout'));
+  },20000);
+
+  try{
+    const issuer=window.STELLARIS_ISSUE_TICKET;
+    if(typeof issuer==='function'){
+      await issuer.call(issueButton);
+      if(!processing)return;
+      if(ticketModal&&!ticketModal.hidden){
+        syncIssuedBooking();
+        return;
+      }
+      const detail=!bookingMessage?.hidden?bookingMessage.textContent.trim():'';
+      if(detail&&bookingMessage.classList.contains('error'))finishFailure(detail);
+      else finishFailure(detail||t('timeout'));
+      return;
     }
-  },15000);
+
+    // Fallback for an older cached booking script. The current build captures the real
+    // ticketing handler and normally never uses this path.
+    issueButton.click();
+  }catch(error){
+    finishFailure(error?.code||error?.message||'');
+  }
 });
 
 if(bookingMessage){

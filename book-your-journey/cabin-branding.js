@@ -1,3 +1,5 @@
+import { FARE_FAMILIES } from '../operations-model.js?v=20260816-live-ticketing-v2';
+
 const select=document.getElementById('cabinClass');
 if(select){
   const labels={
@@ -10,22 +12,50 @@ if(select){
     fr:{first:'Celestia First',business:'Astrelis Business',premium:'Lumina Premium Economy',economy:'Nova Economy'}
   };
   const language=()=>{const code=localStorage.getItem('stellaris-language')||'ko';return labels[code]?code:'ko'};
-  const current=select.value||'economy';
-  let premium=select.querySelector('option[value="premium"]');
-  if(!premium){premium=document.createElement('option');premium.value='premium';select.appendChild(premium);}
-  const order=['first','business','premium','economy'];
-  order.forEach(value=>{const option=select.querySelector(`option[value="${value}"]`);if(option)select.appendChild(option);});
-  select.value=current;
+  const copyFamilies=list=>list.map(item=>({...item}));
+  const originalEconomy=copyFamilies(FARE_FAMILIES.economy);
+  const originalBusiness=copyFamilies(FARE_FAMILIES.business);
+  const originalFirst=copyFamilies(FARE_FAMILIES.first);
+  const novaFamilies=originalEconomy.map(item=>({...item,name:item.id==='economy-saver'?'Nova Economy Saver':item.id==='economy-standard'?'Nova Economy Standard':'Nova Economy Flex'}));
+  const astrelisFamilies=originalBusiness.map(item=>({...item,name:item.id==='business-standard'?'Astrelis Business Standard':'Astrelis Business Flex'}));
+  const celestiaFamilies=originalFirst.map(item=>({...item,name:item.id==='first-standard'?'Celestia First Standard':'Celestia First Flex'}));
+  const luminaFamilies=[
+    {id:'premium-standard',cabin:'economy',name:'Lumina Premium Standard',multiplier:1.28,mileageFactor:1.1,seatRule:'standard-included'},
+    {id:'premium-flex',cabin:'economy',name:'Lumina Premium Flex',multiplier:1.48,mileageFactor:1.25,seatRule:'all-included'}
+  ];
+
+  const first=select.querySelector('option[value="first"]');
+  const business=select.querySelector('option[value="business"]');
+  let nova=[...select.options].find(option=>option.value==='economy'&&option.dataset.cabinBrand!=='premium');
+  if(!nova){nova=document.createElement('option');nova.value='economy';select.appendChild(nova);}
+  nova.dataset.cabinBrand='economy';
+  let premium=[...select.options].find(option=>option.dataset.cabinBrand==='premium'||option.value==='premium');
+  if(!premium){premium=document.createElement('option');select.appendChild(premium);}
+  premium.value='economy';premium.dataset.cabinBrand='premium';
+  if(first)first.dataset.cabinBrand='first';if(business)business.dataset.cabinBrand='business';
+  [first,business,premium,nova].filter(Boolean).forEach(option=>select.appendChild(option));
+  if(![...select.options].some(option=>option.selected))nova.selected=true;
+
+  const selectedBrand=()=>select.options[select.selectedIndex]?.dataset.cabinBrand||select.value||'economy';
+  function applyFamilies(){
+    const brand=selectedBrand();
+    FARE_FAMILIES.economy=brand==='premium'?copyFamilies(luminaFamilies):copyFamilies(novaFamilies);
+    FARE_FAMILIES.business=copyFamilies(astrelisFamilies);
+    FARE_FAMILIES.first=copyFamilies(celestiaFamilies);
+    window.STELLARIS_CABIN_BRAND=brand;
+  }
   function applyLabels(){
     const map=labels[language()]||labels.ko;
-    order.forEach(value=>{const option=select.querySelector(`option[value="${value}"]`);if(option)option.textContent=map[value];});
+    [...select.options].forEach(option=>{
+      const brand=option.dataset.cabinBrand||option.value;
+      if(map[brand])option.textContent=map[brand];
+    });
   }
   function patchDynamic(){
-    const brand={first:'CELESTIA',business:'ASTRELIS',premium:'LUMINA',economy:'NOVA'}[select.value]||'NOVA';
+    const brandName={first:'CELESTIA',business:'ASTRELIS',premium:'LUMINA',economy:'NOVA'}[selectedBrand()]||'NOVA';
     document.querySelectorAll('.aircraft-chip,[data-seat-subtitle]').forEach(el=>{
-      if(!el.dataset.cabinOriginal)el.dataset.cabinOriginal=el.textContent;
-      const base=el.dataset.cabinOriginal;
-      el.textContent=base.replace(/ · [FCY] (?=\d)/,` · ${brand} `);
+      const current=el.textContent;
+      el.textContent=current.replace(/ · (?:[FCY]|CELESTIA|ASTRELIS|LUMINA|NOVA) (?=\d)/,` · ${brandName} `);
     });
     document.querySelectorAll('[data-family="premium-standard"] .fare-benefits').forEach(el=>{
       if(el.children.length)return;
@@ -38,10 +68,10 @@ if(select){
       el.innerHTML=items.map(item=>`<span>${item}</span>`).join('');
     });
   }
-  applyLabels();
+  applyFamilies();applyLabels();
   const observer=new MutationObserver(()=>{applyLabels();patchDynamic();});
   observer.observe(document.querySelector('.booking-engine')||document.body,{subtree:true,childList:true,characterData:true});
-  select.addEventListener('change',()=>queueMicrotask(patchDynamic));
+  select.addEventListener('change',()=>{applyFamilies();queueMicrotask(patchDynamic);});
   window.addEventListener('stellaris:languagechange',()=>{applyLabels();patchDynamic();});
   queueMicrotask(patchDynamic);
 }

@@ -63,6 +63,14 @@ function installNoticeShortcut(){
     link.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 13.5V10a1 1 0 0 1 1-1H8l7-3.5v12L8 14H5.5a1 1 0 0 1-1-1Zm3.5.5 1.2 4.1a1 1 0 0 0 1 .7h1.4l-1.5-4.8M17.5 8.5a4.5 4.5 0 0 1 0 6"/></svg><span class="sr-only">공지사항</span>';
     language.insertAdjacentElement('afterend',link);
   }
+  Object.assign(link.style,{
+    display:'inline-flex',
+    alignItems:'center',
+    justifyContent:'center',
+    flex:'0 0 40px',
+    width:'40px',
+    height:'40px'
+  });
   const label=(accountLabels[currentLanguage()]||accountLabels.ko).notices;
   link.setAttribute('aria-label',label);link.setAttribute('title',label);
 }
@@ -113,6 +121,11 @@ function renderUser(user) {
 
 installExtendedNavigation();
 translateAccountNavigation();
+const headerHost=document.getElementById('siteHeader')||document.querySelector('.site-header')?.parentElement;
+if(headerHost){
+  const headerObserver=new MutationObserver(()=>queueMicrotask(installNoticeShortcut));
+  headerObserver.observe(headerHost,{childList:true,subtree:true});
+}
 window.addEventListener('stellaris:languagechange', (event) => {
   translateAccountNavigation(event.detail?.language || currentLanguage());
   queueMicrotask(installExtendedNavigation);

@@ -119,9 +119,17 @@ document.querySelector('[data-payment-sim-approve]')?.addEventListener('click',(
   localStorage.setItem('stellaris-demo-payment-v1',JSON.stringify(currentPayment));
   closePayment();
   if(!issueButton)return;
+
+  // Passenger information was already validated before this payment dialog opened.
+  // Mark both interceptors ready for the synthetic click so ticketing reaches booking.js
+  // instead of reopening this payment dialog after passenger-info.js finishes its async draft save.
   issueButton.dataset.demoPaymentReady='true';
+  issueButton.dataset.passengerManifestReady='true';
   issueButton.click();
-  queueMicrotask(()=>delete issueButton.dataset.demoPaymentReady);
+  queueMicrotask(()=>{
+    delete issueButton.dataset.demoPaymentReady;
+    delete issueButton.dataset.passengerManifestReady;
+  });
 });
 if(ticketModal)new MutationObserver(syncIssuedBooking).observe(ticketModal,{attributes:true,attributeFilter:['hidden']});
 window.addEventListener('stellaris:languagechange',syncLanguage);

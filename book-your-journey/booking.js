@@ -3,21 +3,21 @@ import {
   AIRPORTS, ROUTES, addMonths, availableDestinations, dateISO, fareFamilies,
   forecastOperation, getRoute, progressiveUnavailableSeats, quoteFare, scheduledFlights,
   seatLayout, seatSelectionFee
-} from '../operations-model.js?v=20260816-passenger-fares-v1';
+} from '../operations-model.js?v=20260816-live-ticketing-v2';
 import {
   collection, doc, getDoc, onSnapshot, runTransaction, serverTimestamp, Timestamp
 } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 
 const TEXT={
   ko:{
-    round:'왕복',oneway:'편도',origin:'출발지',destination:'도착지',departure:'출발일',return:'귀국일',passengers:'탑승객',cabin:'여행 클래스',adult:n=>'성인 '+n+'명',child:n=>'소아·아동 '+n+'명',infant:n=>'유아 '+n+'명',passengerTitle:'승객 선택',adultAge:'만 12세 이상',childAge:'만 2세~만 12세 미만',infantAge:'생후 7일~만 2세 미만',passengerDone:'선택 완료',partyFare:summary=>summary+' · 편도 전체',farePolicy:'소아·아동 25% 할인 · 유아 무료',passengerLimit:'전체 승객은 최대 9명까지 선택할 수 있습니다.',infantLimit:'유아는 성인 1명당 1명까지 선택할 수 있습니다.',economy:'Economy (Y)',business:'Business (C)',first:'First (F)',search:'항공권 검색',
-    window:(a,b)=>a+'부터 '+b+'까지 예약할 수 있습니다.',fareNote:'표시 운임은 성인 1인 편도 기준이며 세금과 유류할증료를 포함합니다.',choose:'항공편과 운임 선택',resultsNote:'편명과 시각은 공개된 스텔라리스 정기 운항 스케줄을 사용합니다.',outbound:'가는 편',inbound:'오는 편',
+    round:'왕복',oneway:'편도',origin:'출발지',destination:'도착지',departure:'출발일',return:'귀국일',passengers:'탑승객',cabin:'여행 클래스',adult:n=>'성인 '+n+'명',child:n=>'소아·아동 '+n+'명',infant:n=>'유아 '+n+'명',adultLabel:'성인',childLabel:'소아·아동',infantLabel:'유아',passengerTitle:'승객 선택',adultAge:'만 12세 이상',childAge:'만 2세~만 12세 미만',infantAge:'생후 7일~만 2세 미만',passengerDone:'선택 완료',partyFare:summary=>summary+' · 편도 전체',farePolicy:kind=>kind==='domestic'?'소아·아동 25% 할인 · 유아 무료':'소아·아동 25% 할인 · 유아 성인 정상 운임의 10%',passengerPolicy:'유아는 좌석을 사용하지 않으며 국내선은 무료, 국제선은 성인 정상 운임의 10%입니다. 소아·아동 운임은 성인 운임에서 25% 할인됩니다.',passengerLimit:'전체 승객은 최대 9명까지 선택할 수 있습니다.',infantLimit:'유아는 성인 1명당 1명까지 선택할 수 있습니다.',economy:'Economy (Y)',business:'Business (C)',first:'First (F)',search:'항공권 검색',
+    window:(a,b)=>a+'부터 '+b+'까지 예약할 수 있습니다.',fareNote:'표시 운임은 선택한 전체 일행의 편도 합계이며 세금과 유류할증료를 포함합니다.',choose:'항공편과 운임 선택',resultsNote:'편명과 시각은 공개된 스텔라리스 정기 운항 스케줄을 사용합니다.',outbound:'가는 편',inbound:'오는 편',
     aircraft:'운항 기종',perAdult:'성인 1인 · 편도',selectFare:'이 운임 선택',selected:'선택됨',seatTitle:'좌석 선택',standard:'일반 좌석',front:'앞쪽 좌석',extra:'넓은 좌석',occupied:'발권·선택 중',systemBlocked:'운영 제한',selectedSeat:'내 선택',seatHelp:n=>n+'개의 좌석을 선택하세요.',
     seatIncluded:'운임에 포함',seatFee:'좌석 선택 요금',seatNone:'선택한 좌석이 없습니다.',issue:'선택한 여정 발권',summary:'선택한 여정',login:'발권하려면 먼저 로그인해야 합니다.',loginLink:'로그인하기',invalidDate:'예약 가능한 날짜 범위를 확인해 주세요.',returnDate:'귀국일은 출발일보다 늦어야 합니다.',noFlights:'선택한 노선의 운항편이 없습니다.',noCabin:'선택한 여행 클래스가 제공되는 항공편이 없습니다.',seatCount:n=>n+'석',chooseAll:'각 여정의 운임과 좌석을 모두 선택해 주세요.',seatUnavailable:'다른 승객이 먼저 선택했거나 현재 선택할 수 없는 좌석입니다.',seatLimit:n=>'좌석은 '+n+'개까지 선택할 수 있습니다.',seatSyncError:'좌석 현황을 불러오지 못했습니다. 로그인 상태와 네트워크를 확인해 주세요.',holdNotice:'선택한 좌석은 15분 동안 임시로 확보됩니다.',issuing:'Firestore에 발권 정보를 저장하고 있습니다…',issued:ref=>'발권이 완료되었습니다. 예약번호: '+ref,ticketFailed:'발권에 실패했습니다. 선택한 좌석을 다시 확인해 주세요.',ticketComplete:'발권이 완료되었습니다!',bookingNumber:'예약번호',passengerName:'승객 이름',flightNumber:'편명',seatLabel:'좌석',close:'확인',passengerGroup:(name,count)=>count>1?name+' 외 '+(count-1)+'명':name,fare:'항공 운임',seatTotal:'좌석 요금',total:'총 결제 예정 금액',miles:'적립 예정',estimatedMiles:'예상 적립 Star Miles',schedule:'정기 운항편',dayAfter:n=>'+'+n+'일'
   },
   'en-US':{
-    round:'Round trip',oneway:'One way',origin:'From',destination:'To',departure:'Departure',return:'Return',passengers:'Passengers',cabin:'Travel class',adult:n=>n+' adult'+(n>1?'s':''),child:n=>n+' child'+(n>1?'ren':''),infant:n=>n+' infant'+(n>1?'s':''),passengerTitle:'Select passengers',adultAge:'Age 12 and over',childAge:'Age 2 to under 12',infantAge:'7 days to under age 2',passengerDone:'Done',partyFare:summary=>summary+' · party total · one way',farePolicy:'Children 25% off · infants free',passengerLimit:'You can select up to 9 passengers.',infantLimit:'Each adult may accompany one infant.',economy:'Economy (Y)',business:'Business (C)',first:'First (F)',search:'Search flights',
-    window:(a,b)=>'Booking is open from '+a+' through '+b+'.',fareNote:'Displayed prices are one-way per adult and include taxes and fuel surcharge.',choose:'Choose flights and fares',resultsNote:'Flight numbers and times follow the published Stellaris timetable.',outbound:'Outbound',inbound:'Return',
+    round:'Round trip',oneway:'One way',origin:'From',destination:'To',departure:'Departure',return:'Return',passengers:'Passengers',cabin:'Travel class',adult:n=>n+' adult'+(n>1?'s':''),child:n=>n+' child'+(n>1?'ren':''),infant:n=>n+' infant'+(n>1?'s':''),adultLabel:'Adult',childLabel:'Child',infantLabel:'Infant',passengerTitle:'Select passengers',adultAge:'Age 12 and over',childAge:'Age 2 to under 12',infantAge:'7 days to under age 2',passengerDone:'Done',partyFare:summary=>summary+' · party total · one way',farePolicy:kind=>kind==='domestic'?'Children 25% off · infants free':'Children 25% off · infants 10% of the normal adult fare',passengerPolicy:'Infants do not occupy a seat and travel free on domestic flights; international infant fares are 10% of the normal adult fare. Children receive 25% off the adult fare.',passengerLimit:'You can select up to 9 passengers.',infantLimit:'Each adult may accompany one infant.',economy:'Economy (Y)',business:'Business (C)',first:'First (F)',search:'Search flights',
+    window:(a,b)=>'Booking is open from '+a+' through '+b+'.',fareNote:'Displayed prices are the one-way total for the selected party and include taxes and fuel surcharge.',choose:'Choose flights and fares',resultsNote:'Flight numbers and times follow the published Stellaris timetable.',outbound:'Outbound',inbound:'Return',
     aircraft:'Aircraft',perAdult:'Per adult · one way',selectFare:'Select this fare',selected:'Selected',seatTitle:'Select seats',standard:'Standard seat',front:'Front zone',extra:'Extra legroom',occupied:'Held or ticketed',systemBlocked:'Operationally restricted',selectedSeat:'Your selection',seatHelp:n=>'Select '+n+' seat'+(n>1?'s':'')+'.',
     seatIncluded:'Included in fare',seatFee:'Seat selection fee',seatNone:'No seats selected.',issue:'Issue selected itinerary',summary:'Selected itinerary',login:'Sign in before issuing a ticket.',loginLink:'Sign in',invalidDate:'Check the available booking dates.',returnDate:'The return date must be after departure.',noFlights:'No flights operate on this route.',noCabin:'No flights offer the selected travel class.',seatCount:n=>n+' seats',chooseAll:'Select a fare and all required seats for each flight.',seatUnavailable:'Another passenger selected this seat or it is no longer available.',seatLimit:n=>'You can select up to '+n+' seat'+(n>1?'s':'')+'.',seatSyncError:'Could not load live seat availability. Check your sign-in and network connection.',holdNotice:'Selected seats are held for 15 minutes.',issuing:'Saving your ticket to Firestore…',issued:ref=>'Ticket issued. Booking reference: '+ref,ticketFailed:'Ticketing failed. Check your selected seats and try again.',ticketComplete:'Ticketing complete!',bookingNumber:'Booking reference',passengerName:'Passenger name',flightNumber:'Flight',seatLabel:'Seat',close:'OK',passengerGroup:(name,count)=>count>1?name+' and '+(count-1)+' more':name,fare:'Air fare',seatTotal:'Seat fees',total:'Estimated total',miles:'Miles to earn',estimatedMiles:'Estimated Star Miles',schedule:'Scheduled service',dayAfter:n=>'+'+n+' day'+(n>1?'s':'')
   }
@@ -67,7 +67,7 @@ function airportName(code){const item=AIRPORTS[code];return lang()==='ko'?item.n
 function money(value){return new Intl.NumberFormat(lang()==='ko'?'ko-KR':'en-US',{style:'currency',currency:'KRW',maximumFractionDigits:0}).format(value);}
 function points(value){return new Intl.NumberFormat(lang()==='ko'?'ko-KR':'en-US').format(value);}
 function mileageRate(flight){return getRoute(flight.origin,flight.destination)?.kind==='domestic'?10:15;}
-function estimatedMiles(flight,quote){return Math.floor(quote.total/1000*mileageRate(flight)*quote.family.mileageFactor);}
+function estimatedMiles(flight,quote){const eligible=quote.mileageEligibleTotal??quote.total;return Math.floor(eligible/1000*mileageRate(flight)*quote.family.mileageFactor);}
 function showMessage(content,type=''){message.hidden=!content;message.className='booking-message'+(type?' '+type:'');message.innerHTML=content;}
 function familyBenefits(id){return (FARE_COPY[lang()]||FARE_COPY['en-US'])[id]||[];}
 function seatTypeLabel(type){return type==='front'?t('front'):type==='extraLegroom'?t('extra'):t('standard');}
@@ -109,7 +109,6 @@ function translateStatic(){
   $('[data-label-origin]').textContent=t('origin');$('[data-label-destination]').textContent=t('destination');
   $('[data-label-departure]').textContent=t('departure');$('[data-label-return]').textContent=t('return');
   $('[data-label-passengers]').textContent=t('passengers');$('[data-label-cabin]').textContent=t('cabin');
-  [...passengers.options].forEach(option=>option.textContent=t('adult',Number(option.value)));
   [...cabin.options].forEach(option=>{option.textContent=t(option.value);});
   $('#searchFlightsButton').textContent=t('search');$('[data-fare-note]').textContent=t('fareNote');
   $('[data-results-title]').textContent=t('choose');$('[data-results-note]').textContent=t('resultsNote');
@@ -121,12 +120,12 @@ function translateStatic(){
     ['[data-ticket-complete]','ticketComplete'],['[data-ticket-label-ref]','bookingNumber'],
     ['[data-ticket-label-passenger]','passengerName'],['[data-ticket-label-flight]','flightNumber'],
     ['[data-ticket-label-seat]','seatLabel'],['[data-ticket-close]','close'],
-    ['[data-passenger-title]','passengerTitle'],['[data-passenger-adult]','adult'],
-    ['[data-passenger-child]','child'],['[data-passenger-infant]','infant'],
+    ['[data-passenger-title]','passengerTitle'],['[data-passenger-adult]','adultLabel'],
+    ['[data-passenger-child]','childLabel'],['[data-passenger-infant]','infantLabel'],
     ['[data-passenger-adult-age]','adultAge'],['[data-passenger-child-age]','childAge'],
-    ['[data-passenger-infant-age]','infantAge'],['[data-passenger-done]','passengerDone']
+    ['[data-passenger-infant-age]','infantAge'],['[data-passenger-policy]','passengerPolicy'],['[data-passenger-done]','passengerDone']
   ];
-  translatedElements.forEach(([selector,key])=>{const element=$(selector);if(element)element.textContent=key==='adult'?t(key,1):key==='child'||key==='infant'?t(key,0):t(key);});
+  translatedElements.forEach(([selector,key])=>{const element=$(selector);if(element)element.textContent=t(key);});
   syncPassengerUI();$('[data-issue-ticket]').textContent=t('issue');
 }
 
@@ -229,7 +228,7 @@ function fareChoice(flight,direction,index,family){
   const selected=state.chosen[direction]?.number===flight.number&&state.chosen[direction]?.selectedFare.family.id===family.id;
   return '<button class="fare-choice'+(selected?' is-selected':'')+'" type="button" data-choose-fare="'+direction+'" data-index="'+index+'" data-family="'+family.id+'">'+
     '<span class="fare-choice-name">'+family.name+'</span>'+
-    '<span class="fare-choice-price">'+money(quote.total)+'<small>'+t('partyFare',passengerSummaryText())+'</small><small class="fare-choice-policy">'+t('farePolicy')+'</small><small class="fare-choice-miles">'+t('estimatedMiles')+' : '+points(miles)+'</small></span>'+
+    '<span class="fare-choice-price">'+money(quote.total)+'<small>'+t('partyFare',passengerSummaryText())+'</small><small class="fare-choice-policy">'+t('farePolicy',getRoute(flight.origin,flight.destination)?.kind)+'</small><small class="fare-choice-miles">'+t('estimatedMiles')+' : '+points(miles)+'</small></span>'+
     '<span class="fare-benefits">'+familyBenefits(family.id).map(item=>'<span>'+item+'</span>').join('')+'</span>'+
     '<span class="fare-choice-action">'+(selected?t('selected'):t('selectFare'))+' →</span></button>';
 }

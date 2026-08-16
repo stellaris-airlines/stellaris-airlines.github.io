@@ -1,0 +1,19 @@
+.passenger-information{margin-top:34px;padding:30px;border:1px solid rgba(21,23,21,.14);background:#fff}
+.passenger-information[hidden]{display:none!important}
+.passenger-information-head{display:flex;justify-content:space-between;gap:24px;align-items:flex-end;margin-bottom:22px}
+.passenger-information-head h2{margin:4px 0 0;font-size:clamp(24px,3vw,38px);letter-spacing:-.04em}
+.passenger-information-head>p{max-width:520px;margin:0;color:#62655f;font-size:13px;line-height:1.7}
+.passenger-manifest{display:grid;gap:16px}
+.passenger-info-card{border:1px solid rgba(21,23,21,.13);background:#f8f7f2;padding:20px}
+.passenger-info-card-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px}
+.passenger-info-card-head strong{font-size:15px}
+.passenger-info-card-head span{font-family:"Michroma",sans-serif;font-size:8px;letter-spacing:.08em;color:#777a72}
+.passenger-info-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.passenger-info-grid label{display:grid;gap:7px;font-size:11px;font-weight:700;color:#4f534c}
+.passenger-info-grid input,.passenger-info-grid select{width:100%;min-width:0;height:46px;padding:0 12px;border:1px solid rgba(21,23,21,.18);background:#fff;color:#151715;font:inherit}
+.passenger-info-grid input:focus,.passenger-info-grid select:focus{outline:2px solid rgba(168,159,82,.28);border-color:#8f8848}
+.passenger-info-grid .contact-wide{grid-column:span 2}
+.passenger-info-error{margin:14px 0 0;padding:12px 14px;border:1px solid rgba(168,57,48,.24);background:#fff5f3;color:#8b2f29;font-size:12px;line-height:1.6}
+.passenger-info-note{margin:14px 0 0;color:#777a72;font-size:11px;line-height:1.65}
+@media(max-width:900px){.passenger-information{padding:22px 18px}.passenger-information-head{display:block}.passenger-information-head>p{margin-top:10px}.passenger-info-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.passenger-information{margin-top:24px;padding:18px 14px}.passenger-info-card{padding:16px 12px}.passenger-info-grid{grid-template-columns:1fr}.passenger-info-grid .contact-wide{grid-column:auto}.passenger-info-grid input,.passenger-info-grid select{height:48px}}

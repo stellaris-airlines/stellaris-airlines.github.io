@@ -1,53 +1,19 @@
 import { db } from './firebase-config.js';
 import { doc, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 
-if(!document.querySelector('link[data-site-content-style]')){
-  const link=document.createElement('link');link.rel='stylesheet';link.href=new URL('./site-content.css?v=20260816-banner-v1',import.meta.url).href;link.dataset.siteContentStyle='true';document.head.appendChild(link);
-}
+function ensureStyle(href,marker){if(document.querySelector(`link[${marker}]`))return;const link=document.createElement('link');link.rel='stylesheet';link.href=new URL(href,import.meta.url).href;link.setAttribute(marker,'true');document.head.appendChild(link);}
+ensureStyle('./site-content.css?v=20260817-digital-v1','data-site-content-style');
+ensureStyle('./service-pages.css?v=20260817-digital-v1','data-service-pages-style');
 
-const DEFAULT_BANNER={
-  active:true,
-  text:'새로운 좌석 브랜드를 만나보세요 — CELESTIA · ASTRELIS · LUMINA · NOVA',
-  linkLabel:'좌석 안내',
-  linkUrl:'seats/'
-};
+const DEFAULT_BANNER={active:true,text:'새로운 좌석 브랜드를 만나보세요 — CELESTIA · ASTRELIS · LUMINA · NOVA',linkLabel:'좌석 안내',linkUrl:'seats/'};
+const DEFAULT_HOME={heroTitle:'Beyond the horizon.',heroBody:'Stellaris Airlines와 함께 새로운 여정을 시작하세요.',popupActive:false,popupTitle:'STELLARIS UPDATE',popupBody:'새로운 디지털 서비스를 확인해 보세요.',promotionTitle:'온라인 체크인',promotionBody:'출발 24시간 전부터 온라인 체크인과 모바일 탑승권 발급이 가능합니다.',routeTitle:'추천 노선',routeBody:'공개된 정기 운항 스케줄에서 다음 여정을 찾아보세요.'};
+function safeHref(value){const raw=String(value||'').trim();if(!raw||/^javascript:/i.test(raw)||/^data:/i.test(raw))return '';try{return new URL(raw,new URL('./',import.meta.url)).href;}catch(error){return '';}}
+function ensureBanner(){if(document.body.dataset.page!=='home'&&!document.body.classList.contains('page-home'))return null;let banner=document.querySelector('[data-home-announcement-banner]');if(banner)return banner;banner=document.createElement('aside');banner.className='home-announcement-banner';banner.dataset.homeAnnouncementBanner='true';banner.setAttribute('aria-label','Stellaris announcement');banner.innerHTML='<div class="shell-wide home-announcement-inner"><span data-home-banner-text></span><a data-home-banner-link hidden></a></div>';const header=document.querySelector('.site-header');if(header)header.before(banner);else document.body.prepend(banner);return banner;}
+function renderBanner(data={}){const banner=ensureBanner();if(!banner)return;const config={...DEFAULT_BANNER,...data};banner.hidden=config.active===false;const text=banner.querySelector('[data-home-banner-text]');if(text)text.textContent=String(config.text||DEFAULT_BANNER.text);const link=banner.querySelector('[data-home-banner-link]');const href=safeHref(config.linkUrl);if(link&&href&&config.linkLabel){link.hidden=false;link.href=href;link.textContent=String(config.linkLabel)+' →';}else if(link){link.hidden=true;link.removeAttribute('href');link.textContent='';}}
+function ensureHomeStrip(){if(document.body.dataset.page!=='home'&&!document.body.classList.contains('page-home'))return null;let strip=document.querySelector('[data-home-experience-strip]');if(strip)return strip;strip=document.createElement('section');strip.className='home-experience-strip';strip.dataset.homeExperienceStrip='true';strip.innerHTML='<div class="shell"><div><strong data-home-promo-title></strong><p data-home-promo-body></p></div><div><strong data-home-route-title></strong><p data-home-route-body></p></div></div>';const hero=document.querySelector('.home-hero');if(hero)hero.insertAdjacentElement('afterend',strip);return strip;}
+function ensurePopup(){let popup=document.querySelector('[data-home-experience-popup]');if(popup)return popup;popup=document.createElement('aside');popup.className='home-experience-popup';popup.dataset.homeExperiencePopup='true';popup.innerHTML='<button type="button" aria-label="닫기" data-home-popup-close>×</button><p class="eyebrow" data-home-popup-title></p><p data-home-popup-body></p>';popup.querySelector('[data-home-popup-close]').addEventListener('click',()=>{popup.hidden=true;sessionStorage.setItem('stellaris-home-popup-dismissed','1');});document.body.appendChild(popup);return popup;}
+function renderHomeExperience(data={}){if(document.body.dataset.page!=='home'&&!document.body.classList.contains('page-home'))return;const config={...DEFAULT_HOME,...data};const heroTitle=document.querySelector('.home-hero .hero-copy h1');const heroBody=document.querySelector('.home-hero .hero-copy > p:not(.eyebrow)');if(heroTitle&&config.heroTitle)heroTitle.textContent=String(config.heroTitle);if(heroBody&&config.heroBody)heroBody.textContent=String(config.heroBody);const strip=ensureHomeStrip();if(strip){strip.querySelector('[data-home-promo-title]').textContent=String(config.promotionTitle||'');strip.querySelector('[data-home-promo-body]').textContent=String(config.promotionBody||'');strip.querySelector('[data-home-route-title]').textContent=String(config.routeTitle||'');strip.querySelector('[data-home-route-body]').textContent=String(config.routeBody||'');}const popup=ensurePopup();if(popup){popup.querySelector('[data-home-popup-title]').textContent=String(config.popupTitle||'');popup.querySelector('[data-home-popup-body]').textContent=String(config.popupBody||'');popup.hidden=config.popupActive!==true||sessionStorage.getItem('stellaris-home-popup-dismissed')==='1';}}
 
-function safeHref(value){
-  const raw=String(value||'').trim();
-  if(!raw)return '';
-  if(/^javascript:/i.test(raw)||/^data:/i.test(raw))return '';
-  try{return new URL(raw,new URL('./',import.meta.url)).href;}catch(error){return '';}
-}
-
-function ensureBanner(){
-  if(document.body.dataset.page!=='home'&&!document.body.classList.contains('page-home'))return null;
-  let banner=document.querySelector('[data-home-announcement-banner]');
-  if(banner)return banner;
-  banner=document.createElement('aside');
-  banner.className='home-announcement-banner';
-  banner.dataset.homeAnnouncementBanner='true';
-  banner.setAttribute('aria-label','Stellaris announcement');
-  banner.innerHTML='<div class="shell-wide home-announcement-inner"><span data-home-banner-text></span><a data-home-banner-link hidden></a></div>';
-  const header=document.querySelector('.site-header');
-  if(header)header.before(banner);else document.body.prepend(banner);
-  return banner;
-}
-
-function renderBanner(data={}){
-  const banner=ensureBanner();if(!banner)return;
-  const config={...DEFAULT_BANNER,...data};
-  banner.hidden=config.active===false;
-  const text=banner.querySelector('[data-home-banner-text]');if(text)text.textContent=String(config.text||DEFAULT_BANNER.text);
-  const link=banner.querySelector('[data-home-banner-link]');
-  const href=safeHref(config.linkUrl);
-  if(link&&href&&config.linkLabel){link.hidden=false;link.href=href;link.textContent=String(config.linkLabel)+' →';}
-  else if(link){link.hidden=true;link.removeAttribute('href');link.textContent='';}
-}
-
-renderBanner(DEFAULT_BANNER);
-try{
-  onSnapshot(doc(db,'siteContent','homeBanner'),snapshot=>{
-    if(snapshot.exists())renderBanner(snapshot.data());
-    else renderBanner(DEFAULT_BANNER);
-  },()=>renderBanner(DEFAULT_BANNER));
-}catch(error){renderBanner(DEFAULT_BANNER);}
+renderBanner(DEFAULT_BANNER);renderHomeExperience(DEFAULT_HOME);
+try{onSnapshot(doc(db,'siteContent','homeBanner'),snapshot=>renderBanner(snapshot.exists()?snapshot.data():DEFAULT_BANNER),()=>renderBanner(DEFAULT_BANNER));}catch(error){renderBanner(DEFAULT_BANNER);}
+try{onSnapshot(doc(db,'siteContent','homeExperience'),snapshot=>renderHomeExperience(snapshot.exists()?snapshot.data():DEFAULT_HOME),()=>renderHomeExperience(DEFAULT_HOME));}catch(error){renderHomeExperience(DEFAULT_HOME);}

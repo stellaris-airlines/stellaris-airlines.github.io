@@ -48,14 +48,16 @@ if(select){
     const map=labels[language()]||labels.ko;
     [...select.options].forEach(option=>{
       const brand=option.dataset.cabinBrand||option.value;
-      if(map[brand])option.textContent=map[brand];
+      const next=map[brand];
+      if(next&&option.textContent!==next)option.textContent=next;
     });
   }
   function patchDynamic(){
     const brandName={first:'CELESTIA',business:'ASTRELIS',premium:'LUMINA',economy:'NOVA'}[selectedBrand()]||'NOVA';
     document.querySelectorAll('.aircraft-chip,[data-seat-subtitle]').forEach(el=>{
       const current=el.textContent;
-      el.textContent=current.replace(/ · (?:[FCY]|CELESTIA|ASTRELIS|LUMINA|NOVA) (?=\d)/,` · ${brandName} `);
+      const next=current.replace(/ · (?:[FCY]|CELESTIA|ASTRELIS|LUMINA|NOVA) (?=\d)/,` · ${brandName} `);
+      if(next!==current)el.textContent=next;
     });
     document.querySelectorAll('[data-family="premium-standard"] .fare-benefits').forEach(el=>{
       if(el.children.length)return;
@@ -69,9 +71,14 @@ if(select){
     });
   }
   applyFamilies();applyLabels();
-  const observer=new MutationObserver(()=>{applyLabels();patchDynamic();});
+  let scheduled=false;
+  const schedulePatch=()=>{
+    if(scheduled)return;scheduled=true;
+    queueMicrotask(()=>{scheduled=false;applyLabels();patchDynamic();});
+  };
+  const observer=new MutationObserver(schedulePatch);
   observer.observe(document.querySelector('.booking-engine')||document.body,{subtree:true,childList:true,characterData:true});
-  select.addEventListener('change',()=>{applyFamilies();queueMicrotask(patchDynamic);});
+  select.addEventListener('change',()=>{applyFamilies();schedulePatch();});
   window.addEventListener('stellaris:languagechange',()=>{applyLabels();patchDynamic();});
-  queueMicrotask(patchDynamic);
+  schedulePatch();
 }

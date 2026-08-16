@@ -219,10 +219,12 @@ service cloud.firestore {
     match /notices/{noticeId} {
       allow read: if true;
       allow create: if isAdmin()
-        && request.resource.data.keys().hasAll(['category', 'title', 'body', 'pinned', 'publishedAt', 'updatedAt'])
-        && request.resource.data.keys().hasOnly(['category', 'title', 'body', 'pinned', 'publishedAt', 'updatedAt'])
-        && request.resource.data.category is string
-        && request.resource.data.category.size() <= 30
+        && request.resource.data.keys().hasAll(['category', 'author', 'title', 'body', 'pinned', 'publishedAt', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['category', 'author', 'title', 'body', 'pinned', 'publishedAt', 'updatedAt'])
+        && request.resource.data.category in ['중요', '일반']
+        && request.resource.data.author is string
+        && request.resource.data.author.size() >= 1
+        && request.resource.data.author.size() <= 50
         && request.resource.data.title is string
         && request.resource.data.title.size() >= 1
         && request.resource.data.title.size() <= 120
@@ -230,21 +232,25 @@ service cloud.firestore {
         && request.resource.data.body.size() >= 1
         && request.resource.data.body.size() <= 5000
         && request.resource.data.pinned is bool
+        && request.resource.data.pinned == (request.resource.data.category == '중요')
         && request.resource.data.publishedAt == request.time
         && request.resource.data.updatedAt == request.time;
       allow update: if isAdmin()
-        && request.resource.data.keys().hasOnly(['category', 'title', 'body', 'pinned', 'publishedAt', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['category', 'author', 'title', 'body', 'pinned', 'publishedAt', 'updatedAt'])
         && request.resource.data.publishedAt == resource.data.publishedAt
         && request.resource.data.updatedAt == request.time
-        && request.resource.data.category is string
-        && request.resource.data.category.size() <= 30
+        && request.resource.data.category in ['중요', '일반']
+        && request.resource.data.author is string
+        && request.resource.data.author.size() >= 1
+        && request.resource.data.author.size() <= 50
         && request.resource.data.title is string
         && request.resource.data.title.size() >= 1
         && request.resource.data.title.size() <= 120
         && request.resource.data.body is string
         && request.resource.data.body.size() >= 1
         && request.resource.data.body.size() <= 5000
-        && request.resource.data.pinned is bool;
+        && request.resource.data.pinned is bool
+        && request.resource.data.pinned == (request.resource.data.category == '중요');
       allow delete: if isAdmin();
     }
 

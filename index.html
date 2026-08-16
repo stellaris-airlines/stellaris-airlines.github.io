@@ -87,6 +87,21 @@
       <div><strong>지원</strong><a href="notices/">공지사항</a><a href="support/">지원 센터</a><a href="membership/">Star Miles</a></div>
     </div>
   </div>
-  <div class="shell footer-bottom"><span>ⓒ 2026 STELLARIS AIRLINES. All rights reserved.</span><div><a href="terms/">이용약관</a><a href="privacy/">개인정보처리방침</a></div></div>
+  <div class="shell footer-bottom"><span>ⓒ 2026 STELLARIS AIRLINES. All rights reserved.</span><div><a href="terms/">웹사이트 이용약관</a><a href="international-passenger-conditions/">국제여객 운송약관</a><a href="international-cargo-conditions/">국제화물 운송약관</a><a href="legal-notices/">기타 법률 고지</a><a href="privacy/">개인정보처리방침</a></div></div>
 </footer>
-<script src="app.js?v=20260817-digital-v2"></script></body></html>
+<script src="app.js?v=20260817-digital-v2"></script>
+<script>
+(()=>{
+  const links=[
+    ['terms/','웹사이트 이용약관'],
+    ['international-passenger-conditions/','국제여객 운송약관'],
+    ['international-cargo-conditions/','국제화물 운송약관'],
+    ['legal-notices/','기타 법률 고지'],
+    ['privacy/','개인정보처리방침']
+  ];
+  const bottom=document.querySelector('.site-footer .footer-bottom div');
+  if(!bottom)return;
+  bottom.innerHTML='';
+  links.forEach(([href,label])=>{const a=document.createElement('a');a.href=href;a.textContent=label;bottom.appendChild(a);});
+})();
+</script></body></html>

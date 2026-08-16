@@ -38,7 +38,7 @@ async function loadBanner(){
 }
 function resetNoticeForm(){
   noticeForm.reset();
-  noticeForm.elements.category.value='안내';
+  noticeForm.elements.category.value='일반';
   noticeForm.elements.noticeId.value='';
   noticeForm.querySelector('[data-notice-submit]').textContent='공지 등록';
   cancelButton.hidden=true;
@@ -49,7 +49,9 @@ function renderNotices(items){
   items.forEach(item=>{
     const article=document.createElement('article');article.className='admin-notice-item';
     const content=document.createElement('div');
-    const meta=document.createElement('div');meta.className='admin-notice-meta';meta.textContent=(item.pinned?'중요 · ':'')+(item.category||'안내');
+    const meta=document.createElement('div');meta.className='admin-notice-meta';
+    const category=item.category==='중요'||item.pinned?'중요':'일반';
+    meta.textContent=`${category} · ${item.author||'작성자 미지정'}`;
     const title=document.createElement('h3');title.textContent=item.title||'제목 없음';
     const body=document.createElement('p');body.textContent=item.body||'';
     content.append(meta,title,body);
@@ -57,10 +59,10 @@ function renderNotices(items){
     const edit=document.createElement('button');edit.type='button';edit.className='admin-mini-btn';edit.textContent='수정';
     edit.addEventListener('click',()=>{
       noticeForm.elements.noticeId.value=item.id;
-      noticeForm.elements.category.value=item.category||'안내';
+      noticeForm.elements.category.value=item.category==='중요'||item.pinned?'중요':'일반';
+      noticeForm.elements.author.value=item.author||'';
       noticeForm.elements.title.value=item.title||'';
       noticeForm.elements.body.value=item.body||'';
-      noticeForm.elements.pinned.checked=Boolean(item.pinned);
       noticeForm.querySelector('[data-notice-submit]').textContent='수정 저장';
       cancelButton.hidden=false;
       noticeForm.scrollIntoView({behavior:'smooth',block:'start'});
@@ -97,14 +99,16 @@ bannerForm?.addEventListener('submit',async event=>{
 noticeForm?.addEventListener('submit',async event=>{
   event.preventDefault();
   const id=noticeForm.elements.noticeId.value.trim();
+  const category=noticeForm.elements.category.value==='중요'?'중요':'일반';
   const payload={
-    category:noticeForm.elements.category.value.trim()||'안내',
+    category,
+    author:noticeForm.elements.author.value.trim(),
     title:noticeForm.elements.title.value.trim(),
     body:noticeForm.elements.body.value.trim(),
-    pinned:noticeForm.elements.pinned.checked,
+    pinned:category==='중요',
     updatedAt:serverTimestamp()
   };
-  if(!payload.title||!payload.body)return;
+  if(!payload.author||!payload.title||!payload.body)return;
   try{
     if(id){await updateDoc(doc(db,'notices',id),payload);status('공지사항을 수정했습니다.','success');}
     else{await addDoc(collection(db,'notices'),{...payload,publishedAt:serverTimestamp()});status('공지사항을 등록했습니다.','success');}
@@ -113,7 +117,7 @@ noticeForm?.addEventListener('submit',async event=>{
 });
 cancelButton?.addEventListener('click',resetNoticeForm);
 
-onAuthStateChanged(auth,async user=>{
+onAuthStateChanged(auth,user=>{
   const allowed=isAdmin(user);
   if(!allowed){
     consoleHost.hidden=true;gate.hidden=false;
@@ -124,5 +128,5 @@ onAuthStateChanged(auth,async user=>{
   }
   gate.hidden=true;consoleHost.hidden=false;
   status(`관리자 계정으로 접속했습니다: ${user.email||user.uid}`,'success');
-  await loadBanner();watchNotices();
+  void loadBanner();watchNotices();
 });

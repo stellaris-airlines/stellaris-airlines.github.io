@@ -1,0 +1,59 @@
+/* Keep the complete Stellaris brand visible on narrow mobile headers. */
+@media (max-width: 620px) {
+  .site-header .brand {
+    min-width: 0;
+    overflow: visible;
+    gap: 7px;
+  }
+
+  .site-header .brand-symbol-image {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: auto !important;
+    height: 32px !important;
+    flex: 0 0 auto;
+  }
+
+  .site-header .brand-wordmark-image {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: auto !important;
+    height: 11px !important;
+    max-width: 108px !important;
+    object-fit: contain;
+    flex: 0 1 auto;
+  }
+}
+
+@media (max-width: 390px) {
+  .site-header .header-inner {
+    width: calc(100% - 16px);
+    gap: 6px;
+  }
+
+  .site-header .brand {
+    gap: 6px;
+  }
+
+  .site-header .brand-symbol-image {
+    height: 30px !important;
+  }
+
+  .site-header .brand-wordmark-image {
+    display: block !important;
+    height: 10px !important;
+    max-width: 92px !important;
+  }
+
+  .site-header .language-trigger {
+    min-width: 76px;
+    padding-inline: 7px;
+  }
+
+  .site-header .language-current {
+    max-width: 56px;
+    font-size: 9px;
+  }
+}

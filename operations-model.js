@@ -252,15 +252,28 @@ export function seatLayout(aircraftCode,cabin='economy'){
   return result;
 }
 
+function seededRandom(seed){
+  let state=stableNumber(seed)||0x9e3779b9;
+  return ()=>{
+    state=(state+0x6d2b79f5)>>>0;
+    let value=state;
+    value=Math.imul(value^(value>>>15),value|1);
+    value^=value+Math.imul(value^(value>>>7),value|61);
+    return ((value^(value>>>14))>>>0)/4294967296;
+  };
+}
+
 export function occupiedSeats(aircraftCode,cabin,seed){
   const seats=seatLayout(aircraftCode,cabin);
-  const occupiedRate=.28+(stableNumber(seed+':rate')%43)/100;
+  const random=seededRandom(seed+':occupied');
+  const occupiedRate=.24+random()*.44;
   const count=Math.min(Math.max(0,seats.length-8),Math.round(seats.length*occupiedRate));
-  return new Set(seats
-    .map(seat=>({id:seat.id,score:stableNumber(seed+':'+seat.id)}))
-    .sort((a,b)=>a.score-b.score)
-    .slice(0,count)
-    .map(item=>item.id));
+  const shuffled=seats.map(seat=>seat.id);
+  for(let index=shuffled.length-1;index>0;index--){
+    const target=Math.floor(random()*(index+1));
+    [shuffled[index],shuffled[target]]=[shuffled[target],shuffled[index]];
+  }
+  return new Set(shuffled.slice(0,count));
 }
 
 export function seatSelectionFee(kind,familyId,seatType){

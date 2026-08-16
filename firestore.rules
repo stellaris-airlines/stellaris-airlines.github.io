@@ -27,35 +27,13 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow get: if isOwner(userId);
-      allow list, delete: if false;
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
+      allow delete: if false;
 
       allow create: if isOwner(userId)
-        && request.resource.data.keys().hasAll([
-          'email',
-          'displayName',
-          'provider',
-          'role',
-          'status',
-          'createdAt',
-          'updatedAt'
-        ])
-        && request.resource.data.keys().hasOnly([
-          'email',
-          'displayName',
-          'photoURL',
-          'provider',
-          'role',
-          'status',
-          'termsAccepted',
-          'privacyAccepted',
-          'termsVersion',
-          'privacyVersion',
-          'termsAcceptedAt',
-          'privacyAcceptedAt',
-          'createdAt',
-          'updatedAt'
-        ])
+        && request.resource.data.keys().hasAll(['email','displayName','provider','role','status','createdAt','updatedAt'])
+        && request.resource.data.keys().hasOnly(['email','displayName','photoURL','provider','role','status','termsAccepted','privacyAccepted','termsVersion','privacyVersion','termsAcceptedAt','privacyAcceptedAt','createdAt','updatedAt'])
         && request.auth.token.email is string
         && request.resource.data.email == request.auth.token.email
         && validDisplayName()
@@ -67,50 +45,18 @@ service cloud.firestore {
         && request.resource.data.updatedAt == request.time;
 
       allow update: if isOwner(userId)
-        && request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['displayName', 'photoURL', 'updatedAt'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName','photoURL','updatedAt'])
         && validDisplayName()
         && validOptionalPhotoURL()
         && request.resource.data.updatedAt == request.time;
     }
 
     match /bookings/{bookingId} {
-      allow get, list: if request.auth != null
-        && resource.data.userId == request.auth.uid;
+      allow get, list: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
 
       allow create: if request.auth != null
-        && request.resource.data.keys().hasAll([
-          'bookingRef',
-          'userId',
-          'email',
-          'origin',
-          'destination',
-          'flightNumber',
-          'segments',
-          'passengers',
-          'cabin',
-          'totalFare',
-          'currency',
-          'milesEarned',
-          'status',
-          'createdAt'
-        ])
-        && request.resource.data.keys().hasOnly([
-          'bookingRef',
-          'userId',
-          'email',
-          'origin',
-          'destination',
-          'flightNumber',
-          'segments',
-          'passengers',
-          'cabin',
-          'totalFare',
-          'currency',
-          'milesEarned',
-          'status',
-          'createdAt'
-        ])
+        && request.resource.data.keys().hasAll(['bookingRef','userId','email','origin','destination','flightNumber','segments','passengers','cabin','totalFare','currency','milesEarned','status','createdAt'])
+        && request.resource.data.keys().hasOnly(['bookingRef','userId','email','origin','destination','flightNumber','segments','passengers','cabin','totalFare','currency','milesEarned','status','createdAt'])
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.email == request.auth.token.email
         && request.resource.data.bookingRef is string
@@ -135,63 +81,51 @@ service cloud.firestore {
         && request.resource.data.status == 'ticketed'
         && request.resource.data.createdAt == request.time;
 
-      allow update: if request.auth != null
+      allow update: if isAdmin() || (
+        request.auth != null
         && resource.data.userId == request.auth.uid
         && request.resource.data.userId == resource.data.userId
-        && request.resource.data.status == 'ticketed'
+        && resource.data.status in ['ticketed', 'cancelled']
+        && request.resource.data.status in ['ticketed', 'cancelled']
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'passengerManifest',
-          'passengerCount',
-          'leadPassengerName',
-          'contactEmail',
-          'contactPhone',
-          'passengerManifestUpdatedAt',
-          'paymentStatus',
-          'paymentMethod',
-          'paymentMode',
-          'paymentReference',
-          'paymentUpdatedAt'
+          'passengerManifest','passengerCount','leadPassengerName','contactEmail','contactPhone','passengerManifestUpdatedAt',
+          'paymentStatus','paymentMethod','paymentMode','paymentReference','paymentUpdatedAt',
+          'checkInStatus','checkedInAt','boardingPassIssuedAt','boardingPasses',
+          'status','cancellationStatus','refundAmount','cancelledAt',
+          'changeStatus','requestedDepartureDate','changeRequestedAt'
         ])
-        && (!('passengerManifest' in request.resource.data)
-          || (request.resource.data.passengerManifest is list
-            && request.resource.data.passengerManifest.size() >= 1
-            && request.resource.data.passengerManifest.size() <= 9))
-        && (!('passengerCount' in request.resource.data)
-          || (request.resource.data.passengerCount is int
-            && request.resource.data.passengerCount >= 1
-            && request.resource.data.passengerCount <= 9))
-        && (!('leadPassengerName' in request.resource.data)
-          || (request.resource.data.leadPassengerName is string
-            && request.resource.data.leadPassengerName.size() <= 120))
-        && (!('contactEmail' in request.resource.data)
-          || (request.resource.data.contactEmail is string
-            && request.resource.data.contactEmail.size() <= 254))
-        && (!('contactPhone' in request.resource.data)
-          || (request.resource.data.contactPhone is string
-            && request.resource.data.contactPhone.size() <= 40))
-        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['passengerManifestUpdatedAt'])
-          || request.resource.data.passengerManifestUpdatedAt == request.time)
-        && (!('paymentStatus' in request.resource.data)
-          || request.resource.data.paymentStatus == 'paid-demo')
-        && (!('paymentMethod' in request.resource.data)
-          || request.resource.data.paymentMethod in ['demo-card', 'demo-bank', 'demo-wallet'])
-        && (!('paymentMode' in request.resource.data)
-          || request.resource.data.paymentMode == 'simulation')
-        && (!('paymentReference' in request.resource.data)
-          || (request.resource.data.paymentReference is string
-            && request.resource.data.paymentReference.size() <= 40))
-        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['paymentUpdatedAt'])
-          || request.resource.data.paymentUpdatedAt == request.time);
+        && (!('passengerManifest' in request.resource.data) || (request.resource.data.passengerManifest is list && request.resource.data.passengerManifest.size() >= 1 && request.resource.data.passengerManifest.size() <= 9))
+        && (!('passengerCount' in request.resource.data) || (request.resource.data.passengerCount is int && request.resource.data.passengerCount >= 1 && request.resource.data.passengerCount <= 9))
+        && (!('leadPassengerName' in request.resource.data) || (request.resource.data.leadPassengerName is string && request.resource.data.leadPassengerName.size() <= 120))
+        && (!('contactEmail' in request.resource.data) || (request.resource.data.contactEmail is string && request.resource.data.contactEmail.size() <= 254))
+        && (!('contactPhone' in request.resource.data) || (request.resource.data.contactPhone is string && request.resource.data.contactPhone.size() <= 40))
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['passengerManifestUpdatedAt']) || request.resource.data.passengerManifestUpdatedAt == request.time)
+        && (!('paymentStatus' in request.resource.data) || request.resource.data.paymentStatus in ['paid-demo','refunded-demo'])
+        && (!('paymentMethod' in request.resource.data) || request.resource.data.paymentMethod in ['demo-card','demo-bank','demo-wallet'])
+        && (!('paymentMode' in request.resource.data) || request.resource.data.paymentMode == 'simulation')
+        && (!('paymentReference' in request.resource.data) || (request.resource.data.paymentReference is string && request.resource.data.paymentReference.size() <= 40))
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['paymentUpdatedAt']) || request.resource.data.paymentUpdatedAt == request.time)
+        && (!('checkInStatus' in request.resource.data) || request.resource.data.checkInStatus in ['checked-in','cancelled'])
+        && (!('boardingPasses' in request.resource.data) || (request.resource.data.boardingPasses is list && request.resource.data.boardingPasses.size() >= 1 && request.resource.data.boardingPasses.size() <= 9))
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['checkedInAt']) || request.resource.data.checkedInAt == request.time)
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['boardingPassIssuedAt']) || request.resource.data.boardingPassIssuedAt == request.time)
+        && (!('cancellationStatus' in request.resource.data) || request.resource.data.cancellationStatus == 'cancelled-demo')
+        && (!('refundAmount' in request.resource.data) || (request.resource.data.refundAmount is int && request.resource.data.refundAmount >= 0 && request.resource.data.refundAmount <= resource.data.totalFare))
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['cancelledAt']) || request.resource.data.cancelledAt == request.time)
+        && (!('changeStatus' in request.resource.data) || request.resource.data.changeStatus == 'requested-demo')
+        && (!('requestedDepartureDate' in request.resource.data) || (request.resource.data.requestedDepartureDate is string && request.resource.data.requestedDepartureDate.size() == 10))
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['changeRequestedAt']) || request.resource.data.changeRequestedAt == request.time)
+      );
 
       allow delete: if false;
     }
 
     match /bookingPassengerDrafts/{userId} {
-      allow get: if isOwner(userId);
-      allow list: if false;
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
       allow create, update: if isOwner(userId)
-        && request.resource.data.keys().hasAll(['userId', 'passengers', 'updatedAt'])
-        && request.resource.data.keys().hasOnly(['userId', 'passengers', 'updatedAt', 'clearedAt'])
+        && request.resource.data.keys().hasAll(['userId','passengers','updatedAt'])
+        && request.resource.data.keys().hasOnly(['userId','passengers','updatedAt','clearedAt'])
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.passengers is list
         && request.resource.data.passengers.size() <= 9
@@ -200,18 +134,65 @@ service cloud.firestore {
       allow delete: if isOwner(userId);
     }
 
+    match /travelProfiles/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
+      allow create, update: if isOwner(userId)
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.keys().hasOnly(['userId','email','phone','savedPassengers','updatedAt'])
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.phone is string
+        && request.resource.data.phone.size() <= 40
+        && request.resource.data.savedPassengers is string
+        && request.resource.data.savedPassengers.size() <= 1200
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+
+    match /mileageLedger/{userId}/entries/{entryId} {
+      allow get, list: if isOwner(userId) || isAdmin();
+      allow create, update: if isAdmin() || (
+        isOwner(userId)
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.keys().hasOnly(['userId','sourceBookingId','bookingRef','flightNumber','route','amount','status','updatedAt'])
+        && request.resource.data.sourceBookingId is string
+        && exists(/databases/$(database)/documents/bookings/$(request.resource.data.sourceBookingId))
+        && get(/databases/$(database)/documents/bookings/$(request.resource.data.sourceBookingId)).data.userId == request.auth.uid
+        && request.resource.data.amount is int
+        && request.resource.data.amount >= 0
+        && request.resource.data.amount <= get(/databases/$(database)/documents/bookings/$(request.resource.data.sourceBookingId)).data.milesEarned
+        && request.resource.data.status in ['pending','confirmed','cancelled','used']
+        && request.resource.data.updatedAt == request.time
+      );
+      allow delete: if isAdmin();
+    }
+
     match /siteContent/homeBanner {
       allow read: if true;
       allow create, update: if isAdmin()
-        && request.resource.data.keys().hasAll(['active', 'text', 'linkLabel', 'linkUrl', 'updatedAt'])
-        && request.resource.data.keys().hasOnly(['active', 'text', 'linkLabel', 'linkUrl', 'updatedAt'])
+        && request.resource.data.keys().hasAll(['active','text','linkLabel','linkUrl','updatedAt'])
+        && request.resource.data.keys().hasOnly(['active','text','linkLabel','linkUrl','updatedAt'])
         && request.resource.data.active is bool
-        && request.resource.data.text is string
-        && request.resource.data.text.size() <= 180
-        && request.resource.data.linkLabel is string
-        && request.resource.data.linkLabel.size() <= 40
-        && request.resource.data.linkUrl is string
-        && request.resource.data.linkUrl.size() <= 220
+        && request.resource.data.text is string && request.resource.data.text.size() <= 180
+        && request.resource.data.linkLabel is string && request.resource.data.linkLabel.size() <= 40
+        && request.resource.data.linkUrl is string && request.resource.data.linkUrl.size() <= 220
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if isAdmin();
+    }
+
+    match /siteContent/homeExperience {
+      allow read: if true;
+      allow create, update: if isAdmin()
+        && request.resource.data.keys().hasOnly(['heroTitle','heroBody','promotionTitle','promotionBody','routeTitle','routeBody','popupActive','popupTitle','popupBody','updatedAt'])
+        && request.resource.data.heroTitle is string && request.resource.data.heroTitle.size() <= 100
+        && request.resource.data.heroBody is string && request.resource.data.heroBody.size() <= 400
+        && request.resource.data.promotionTitle is string && request.resource.data.promotionTitle.size() <= 80
+        && request.resource.data.promotionBody is string && request.resource.data.promotionBody.size() <= 500
+        && request.resource.data.routeTitle is string && request.resource.data.routeTitle.size() <= 80
+        && request.resource.data.routeBody is string && request.resource.data.routeBody.size() <= 500
+        && request.resource.data.popupActive is bool
+        && request.resource.data.popupTitle is string && request.resource.data.popupTitle.size() <= 80
+        && request.resource.data.popupBody is string && request.resource.data.popupBody.size() <= 300
         && request.resource.data.updatedAt == request.time;
       allow delete: if isAdmin();
     }
@@ -219,73 +200,65 @@ service cloud.firestore {
     match /notices/{noticeId} {
       allow read: if true;
       allow create: if isAdmin()
-        && request.resource.data.keys().hasAll(['category', 'author', 'title', 'body', 'pinned', 'publishedAt', 'updatedAt'])
-        && request.resource.data.keys().hasOnly(['category', 'author', 'title', 'body', 'pinned', 'publishedAt', 'updatedAt'])
-        && request.resource.data.category in ['중요', '일반']
-        && request.resource.data.author is string
-        && request.resource.data.author.size() >= 1
-        && request.resource.data.author.size() <= 50
-        && request.resource.data.title is string
-        && request.resource.data.title.size() >= 1
-        && request.resource.data.title.size() <= 120
-        && request.resource.data.body is string
-        && request.resource.data.body.size() >= 1
-        && request.resource.data.body.size() <= 5000
+        && request.resource.data.keys().hasAll(['category','author','status','publishStart','publishEnd','title','body','pinned','views','publishedAt','updatedAt'])
+        && request.resource.data.keys().hasOnly(['category','author','status','publishStart','publishEnd','title','body','pinned','views','publishedAt','updatedAt'])
+        && request.resource.data.category in ['중요','일반']
+        && request.resource.data.author is string && request.resource.data.author.size() >= 1 && request.resource.data.author.size() <= 50
+        && request.resource.data.status in ['published','draft']
+        && request.resource.data.publishStart is timestamp
+        && (request.resource.data.publishEnd == null || request.resource.data.publishEnd is timestamp)
+        && request.resource.data.title is string && request.resource.data.title.size() >= 1 && request.resource.data.title.size() <= 120
+        && request.resource.data.body is string && request.resource.data.body.size() >= 1 && request.resource.data.body.size() <= 5000
         && request.resource.data.pinned is bool
         && request.resource.data.pinned == (request.resource.data.category == '중요')
+        && request.resource.data.views == 0
         && request.resource.data.publishedAt == request.time
         && request.resource.data.updatedAt == request.time;
       allow update: if isAdmin()
-        && request.resource.data.keys().hasOnly(['category', 'author', 'title', 'body', 'pinned', 'publishedAt', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['category','author','status','publishStart','publishEnd','title','body','pinned','views','publishedAt','updatedAt'])
         && request.resource.data.publishedAt == resource.data.publishedAt
-        && request.resource.data.updatedAt == request.time
-        && request.resource.data.category in ['중요', '일반']
-        && request.resource.data.author is string
-        && request.resource.data.author.size() >= 1
-        && request.resource.data.author.size() <= 50
-        && request.resource.data.title is string
-        && request.resource.data.title.size() >= 1
-        && request.resource.data.title.size() <= 120
-        && request.resource.data.body is string
-        && request.resource.data.body.size() >= 1
-        && request.resource.data.body.size() <= 5000
+        && request.resource.data.category in ['중요','일반']
+        && request.resource.data.author is string && request.resource.data.author.size() >= 1 && request.resource.data.author.size() <= 50
+        && request.resource.data.status in ['published','draft']
+        && request.resource.data.publishStart is timestamp
+        && (request.resource.data.publishEnd == null || request.resource.data.publishEnd is timestamp)
+        && request.resource.data.title is string && request.resource.data.title.size() >= 1 && request.resource.data.title.size() <= 120
+        && request.resource.data.body is string && request.resource.data.body.size() >= 1 && request.resource.data.body.size() <= 5000
         && request.resource.data.pinned is bool
-        && request.resource.data.pinned == (request.resource.data.category == '중요');
+        && request.resource.data.pinned == (request.resource.data.category == '중요')
+        && request.resource.data.views is int && request.resource.data.views >= 0
+        && request.resource.data.updatedAt == request.time;
+      allow update: if !isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['views'])
+        && resource.data.views is int
+        && request.resource.data.views == resource.data.views + 1;
+      allow delete: if isAdmin();
+    }
+
+    match /flightOperations/{operationId} {
+      allow read: if true;
+      allow create, update: if isAdmin()
+        && request.resource.data.keys().hasOnly(['date','flightNumber','origin','destination','scheduledDeparture','estimatedDeparture','status','delayMinutes','gate','terminal','boardingTime','aircraft','updatedAt'])
+        && request.resource.data.date is string
+        && request.resource.data.flightNumber is string
+        && request.resource.data.origin is string
+        && request.resource.data.destination is string
+        && request.resource.data.scheduledDeparture is string
+        && request.resource.data.estimatedDeparture is string
+        && request.resource.data.status in ['정상 운항 예정','탑승 준비','탑승 중','지연','출발','도착','취소']
+        && request.resource.data.delayMinutes is int && request.resource.data.delayMinutes >= 0 && request.resource.data.delayMinutes <= 1440
+        && request.resource.data.gate is string && request.resource.data.gate.size() <= 20
+        && request.resource.data.terminal is string && request.resource.data.terminal.size() <= 30
+        && request.resource.data.boardingTime is string
+        && request.resource.data.aircraft is string && request.resource.data.aircraft.size() <= 30
+        && request.resource.data.updatedAt == request.time;
       allow delete: if isAdmin();
     }
 
     match /flightInventories/{flightKey}/seats/{seatId} {
       function validSeatRecord() {
-        return request.resource.data.keys().hasAll([
-            'flightKey',
-            'flightNumber',
-            'date',
-            'origin',
-            'destination',
-            'aircraft',
-            'cabin',
-            'seatId',
-            'status',
-            'ownerId',
-            'holdExpiresAt',
-            'updatedAt'
-          ])
-          && request.resource.data.keys().hasOnly([
-            'flightKey',
-            'flightNumber',
-            'date',
-            'origin',
-            'destination',
-            'aircraft',
-            'cabin',
-            'seatId',
-            'status',
-            'ownerId',
-            'holdExpiresAt',
-            'bookingId',
-            'bookingRef',
-            'updatedAt'
-          ])
+        return request.resource.data.keys().hasAll(['flightKey','flightNumber','date','origin','destination','aircraft','cabin','seatId','status','ownerId','holdExpiresAt','updatedAt'])
+          && request.resource.data.keys().hasOnly(['flightKey','flightNumber','date','origin','destination','aircraft','cabin','seatId','status','ownerId','holdExpiresAt','bookingId','bookingRef','updatedAt'])
           && request.resource.data.flightKey == flightKey
           && request.resource.data.seatId == seatId
           && request.resource.data.flightNumber is string
@@ -293,20 +266,18 @@ service cloud.firestore {
           && request.resource.data.origin is string
           && request.resource.data.destination is string
           && request.resource.data.aircraft is string
-          && request.resource.data.cabin in ['economy', 'business', 'first']
+          && request.resource.data.cabin in ['economy','business','first','premium']
           && request.resource.data.ownerId is string
           && request.resource.data.holdExpiresAt is timestamp
           && request.resource.data.updatedAt == request.time;
       }
-
       function validHold() {
         return request.resource.data.status == 'held'
           && request.resource.data.ownerId == request.auth.uid
           && request.resource.data.holdExpiresAt > request.time
           && request.resource.data.holdExpiresAt <= request.time + duration.value(20, 'm')
-          && !request.resource.data.keys().hasAny(['bookingId', 'bookingRef']);
+          && !request.resource.data.keys().hasAny(['bookingId','bookingRef']);
       }
-
       function validTicket() {
         return request.resource.data.status == 'ticketed'
           && request.resource.data.ownerId == request.auth.uid
@@ -316,13 +287,8 @@ service cloud.firestore {
           && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId)).data.userId == request.auth.uid
           && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId)).data.bookingRef == request.resource.data.bookingRef;
       }
-
-      allow get, list: if request.auth != null;
-
-      allow create: if request.auth != null
-        && validSeatRecord()
-        && validHold();
-
+      allow get, list: if isAdmin() || request.auth != null;
+      allow create: if request.auth != null && validSeatRecord() && validHold();
       allow update: if request.auth != null
         && validSeatRecord()
         && request.resource.data.flightKey == resource.data.flightKey
@@ -334,22 +300,17 @@ service cloud.firestore {
         && request.resource.data.cabin == resource.data.cabin
         && request.resource.data.seatId == resource.data.seatId
         && resource.data.status == 'held'
-        && (
-          (
-            resource.data.ownerId == request.auth.uid
-            && resource.data.holdExpiresAt > request.time
-            && (validHold() || validTicket())
-          )
-          ||
-          (
-            resource.data.holdExpiresAt <= request.time
-            && validHold()
-          )
-        );
-
-      allow delete: if request.auth != null
-        && resource.data.status == 'held'
-        && resource.data.ownerId == request.auth.uid;
+        && ((resource.data.ownerId == request.auth.uid && resource.data.holdExpiresAt > request.time && (validHold() || validTicket())) || (resource.data.holdExpiresAt <= request.time && validHold()));
+      allow delete: if isAdmin() || (request.auth != null && (
+        (resource.data.status == 'held' && resource.data.ownerId == request.auth.uid)
+        ||
+        (resource.data.status == 'ticketed'
+          && resource.data.ownerId == request.auth.uid
+          && resource.data.bookingId is string
+          && existsAfter(/databases/$(database)/documents/bookings/$(resource.data.bookingId))
+          && getAfter(/databases/$(database)/documents/bookings/$(resource.data.bookingId)).data.userId == request.auth.uid
+          && getAfter(/databases/$(database)/documents/bookings/$(resource.data.bookingId)).data.status == 'cancelled')
+      ));
     }
 
     match /{document=**} {

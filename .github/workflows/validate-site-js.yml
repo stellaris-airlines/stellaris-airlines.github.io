@@ -12,6 +12,8 @@ on:
       - "travel-service-core.js"
       - "service-tools.js"
       - "site-experience-extension-v2.js"
+      - "service-careers-i18n.js"
+      - "legal-i18n.js"
       - "firebase-config.js"
       - "login/**/*.js"
       - "signup/**/*.js"
@@ -40,7 +42,7 @@ jobs:
       - name: Check JavaScript syntax
         shell: bash
         run: |
-          for file in app.js operations-model.js auth-session.js site-content.js digital-services.js travel-service-core.js service-tools.js site-experience-extension-v2.js firebase-config.js translations.js translations-extra.js; do
+          for file in app.js operations-model.js auth-session.js site-content.js digital-services.js travel-service-core.js service-tools.js site-experience-extension-v2.js service-careers-i18n.js legal-i18n.js firebase-config.js translations.js translations-extra.js; do
             node --input-type=module --check < "$file"
           done
           while IFS= read -r -d '' file; do
@@ -68,9 +70,15 @@ jobs:
           test -f careers/engineering-maintenance/index.html
           test -f careers/digital-corporate/index.html
           test -f livery-gallery/index.html
+          test -f international-passenger-conditions/index.html
+          test -f international-cargo-conditions/index.html
+          test -f legal-notices/index.html
           grep -q "출발 예정 시각 24시간 전" check-in/index.html
           grep -q "data-operation-form" admin/index.html
           grep -q "admin-careers.js" admin/index.html
           grep -q "data-notice-search" notices/index.html
           grep -q "digital-services.js" auth-session.js
           grep -q "site-experience-extension-v2.js" auth-session.js
+          grep -q "service-careers-i18n.js" auth-session.js
+          grep -q "legal-i18n.js" auth-session.js
+          grep -q "auth-session.js?v=20260817-nav-i18n-v3" app.js

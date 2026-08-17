@@ -69,7 +69,7 @@ installCommonChrome();
 
 const authSessionScript=document.createElement('script');
 authSessionScript.type='module';
-authSessionScript.src=A('auth-session.js?v=20260817-nav-i18n-v3');
+authSessionScript.src=A('auth-session.js?v=20260817-nav-i18n-v4');
 document.head.appendChild(authSessionScript);
 
 document.querySelectorAll('.book-link').forEach(el=>el.textContent='항공권 예약하기');
@@ -204,13 +204,26 @@ let savedLanguage='ko';
 try{savedLanguage=localStorage.getItem('stellaris-language')||'ko';}catch(e){}
 if(!languageCodes.includes(savedLanguage))savedLanguage='ko';
 
-const I18N_VERSION='20260817-nav-i18n-v3';
+const I18N_VERSION='20260817-nav-i18n-v4';
+let extendedI18nLoaded=false;
+async function loadExtendedI18n(){
+  if(extendedI18nLoaded)return;
+  extendedI18nLoaded=true;
+  const path=location.pathname;
+  const modules=[];
+  if(/\/(services|baggage|inflight-service|payments-refunds|special-assistance|travel-alerts|special-liveries|hotel-car|news|careers|livery-gallery)(\/|$)/.test(path))modules.push(import(A(`service-careers-i18n.js?v=${I18N_VERSION}`)));
+  if(/\/(terms|international-passenger-conditions|international-cargo-conditions|legal-notices)(\/|$)/.test(path))modules.push(import(A(`legal-i18n.js?v=${I18N_VERSION}`)));
+  if(!modules.length)return;
+  await Promise.allSettled(modules);
+  window.dispatchEvent(new CustomEvent('stellaris:languagechange',{detail:{language:savedLanguage}}));
+}
 const finishI18n=()=>{
   const baseRows=window.STELLARIS_I18N?.rows||[];
   const extraRows=window.STELLARIS_EXTRA_I18N?.rows||[];
   dictionaries=normaliseDict({rows:[...baseRows,...extraRows]});
   i18nReady=true;
   setLanguage(savedLanguage,false);
+  loadExtendedI18n();
 };
 const loadExtraTranslations=()=>{
   const extraScript=document.createElement('script');

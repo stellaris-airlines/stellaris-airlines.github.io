@@ -1,4 +1,27 @@
 import { db } from '../firebase-config.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
-import { CAREER_DEPARTMENTS,careerDocId,parseCareerNotice } from './career-data.js?v=20260817-careers-v1';
-for(const [slug,base] of Object.entries(CAREER_DEPARTMENTS)){const card=document.querySelector(`[data-career-card="${slug}"]`);if(!card)continue;try{const snap=await getDoc(doc(db,'notices',careerDocId(slug)));const data=parseCareerNotice(slug,snap.exists()?snap.data():null);card.querySelector('[data-career-summary]').textContent=data.summary||base.summary;card.querySelector('[data-career-status]').textContent=data.hiringStatus||base.hiringStatus;card.querySelector('[data-career-period]').textContent=data.recruitmentPeriod||base.recruitmentPeriod;}catch(error){console.warn('Career card data unavailable',slug,error);}}
+import { CAREER_DEPARTMENTS,careerDocId,currentCareerLanguage,getCareerView,parseCareerNotice } from './career-data.js?v=20260817-careers-v2';
+
+const managedBySlug={};
+
+function renderCard(slug){
+  const card=document.querySelector(`[data-career-card="${slug}"]`);
+  if(!card)return;
+  const data=getCareerView(slug,currentCareerLanguage(),managedBySlug[slug]||null);
+  if(!data)return;
+  card.querySelector('[data-career-summary]').textContent=data.summary;
+  card.querySelector('[data-career-status]').textContent=data.hiringStatus;
+  card.querySelector('[data-career-period]').textContent=data.recruitmentPeriod;
+}
+
+function renderAll(){Object.keys(CAREER_DEPARTMENTS).forEach(renderCard);}
+renderAll();
+window.addEventListener('stellaris:languagechange',renderAll);
+
+for(const slug of Object.keys(CAREER_DEPARTMENTS)){
+  try{
+    const snap=await getDoc(doc(db,'notices',careerDocId(slug)));
+    if(snap.exists())managedBySlug[slug]=parseCareerNotice(slug,snap.data());
+  }catch(error){console.warn('Career card data unavailable',slug,error);}
+  renderCard(slug);
+}

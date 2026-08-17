@@ -1,6 +1,7 @@
 import { auth } from './firebase-config.js';
 import './site-content.js?v=20260817-digital-v2';
 import './digital-services.js?v=20260817-digital-v2';
+import './site-experience-extension.js?v=20260817-nav-i18n-v1';
 import {
   browserLocalPersistence,
   onAuthStateChanged,

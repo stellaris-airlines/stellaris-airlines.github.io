@@ -1,9 +1,9 @@
 import { auth } from './firebase-config.js';
 import './site-content.js?v=20260817-digital-v2';
 import './digital-services.js?v=20260817-digital-v2';
-import './site-experience-extension-v2.js?v=20260817-nav-i18n-v2';
-import './service-careers-i18n.js?v=20260817-nav-i18n-v3';
-import './legal-i18n.js?v=20260817-nav-i18n-v3';
+import './site-experience-extension-v2.js?v=20260817-nav-i18n-v4';
+import './service-careers-i18n.js?v=20260817-nav-i18n-v4';
+import './legal-i18n.js?v=20260817-nav-i18n-v4';
 import {
   browserLocalPersistence,
   onAuthStateChanged,
@@ -27,12 +27,12 @@ const accountLabels = {
 };
 
 function currentLanguage() {
-  const htmlLang = document.documentElement.lang;
-  if (accountLabels[htmlLang]) return htmlLang;
   try {
     const stored = localStorage.getItem('stellaris-language');
     if (accountLabels[stored]) return stored;
   } catch (error) {}
+  const htmlLang = document.documentElement.lang;
+  if (accountLabels[htmlLang]) return htmlLang;
   return 'ko';
 }
 

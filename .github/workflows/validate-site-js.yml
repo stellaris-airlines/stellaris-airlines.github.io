@@ -10,6 +10,7 @@ on:
       - "site-content.js"
       - "digital-services.js"
       - "travel-service-core.js"
+      - "service-tools.js"
       - "firebase-config.js"
       - "login/**/*.js"
       - "signup/**/*.js"
@@ -37,7 +38,7 @@ jobs:
       - name: Check JavaScript syntax
         shell: bash
         run: |
-          for file in app.js operations-model.js auth-session.js site-content.js digital-services.js travel-service-core.js firebase-config.js translations.js translations-extra.js; do
+          for file in app.js operations-model.js auth-session.js site-content.js digital-services.js travel-service-core.js service-tools.js firebase-config.js translations.js translations-extra.js; do
             node --input-type=module --check < "$file"
           done
           while IFS= read -r -d '' file; do
@@ -50,6 +51,17 @@ jobs:
           test -f boarding-pass/index.html
           test -f booking-confirmation/index.html
           test -f my-page/index.html
+          test -f services/index.html
+          test -f baggage/index.html
+          test -f inflight-service/index.html
+          test -f payments-refunds/index.html
+          test -f special-assistance/index.html
+          test -f travel-alerts/index.html
+          test -f special-liveries/index.html
+          test -f hotel-car/index.html
+          test -f news/index.html
+          test -f careers/index.html
+          test -f livery-gallery/index.html
           grep -q "출발 예정 시각 24시간 전" check-in/index.html
           grep -q "data-operation-form" admin/index.html
           grep -q "data-notice-search" notices/index.html

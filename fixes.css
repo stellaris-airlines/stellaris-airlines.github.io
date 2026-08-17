@@ -149,6 +149,11 @@
   overscroll-behavior-inline:contain;
 }
 
+/* Reservation information legend was removed from the site. Keep it suppressed globally in case an older page template still contains it. */
+.reservation-info{
+  display:none!important;
+}
+
 @media (max-width:900px){
   .header-tools .notice-shortcut{
     display:inline-flex!important;

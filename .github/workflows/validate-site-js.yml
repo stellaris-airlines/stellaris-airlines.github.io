@@ -81,4 +81,4 @@ jobs:
           grep -q "site-experience-extension-v2.js" auth-session.js
           grep -q "service-careers-i18n.js" auth-session.js
           grep -q "legal-i18n.js" auth-session.js
-          grep -q "auth-session.js?v=20260817-nav-i18n-v3" app.js
+          grep -q "auth-session.js?v=20260817-nav-i18n-v4" app.js

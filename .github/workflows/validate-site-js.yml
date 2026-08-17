@@ -24,6 +24,7 @@ on:
       - "boarding-pass/**/*.js"
       - "booking-confirmation/**/*.js"
       - "my-page/**/*.js"
+      - "careers/**/*.js"
       - "translations.js"
       - "translations-extra.js"
       - ".github/workflows/validate-site-js.yml"
@@ -43,7 +44,7 @@ jobs:
           done
           while IFS= read -r -d '' file; do
             node --input-type=module --check < "$file"
-          done < <(find login signup flight-information book-your-journey find-your-reservations view-my-starmiles admin notices check-in boarding-pass booking-confirmation my-page -type f -name '*.js' -print0)
+          done < <(find login signup flight-information book-your-journey find-your-reservations view-my-starmiles admin notices check-in boarding-pass booking-confirmation my-page careers -type f -name '*.js' -print0)
       - name: Digital service smoke checks
         shell: bash
         run: |
@@ -61,8 +62,13 @@ jobs:
           test -f hotel-car/index.html
           test -f news/index.html
           test -f careers/index.html
+          test -f careers/flight-operations/index.html
+          test -f careers/cabin-airport-service/index.html
+          test -f careers/engineering-maintenance/index.html
+          test -f careers/digital-corporate/index.html
           test -f livery-gallery/index.html
           grep -q "출발 예정 시각 24시간 전" check-in/index.html
           grep -q "data-operation-form" admin/index.html
+          grep -q "admin-careers.js" admin/index.html
           grep -q "data-notice-search" notices/index.html
           grep -q "digital-services.js" auth-session.js

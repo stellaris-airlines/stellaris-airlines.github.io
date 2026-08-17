@@ -1,0 +1,4 @@
+import { db } from '../firebase-config.js';
+import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+import { CAREER_DEPARTMENTS,careerDocId,parseCareerNotice } from './career-data.js?v=20260817-careers-v1';
+for(const [slug,base] of Object.entries(CAREER_DEPARTMENTS)){const card=document.querySelector(`[data-career-card="${slug}"]`);if(!card)continue;try{const snap=await getDoc(doc(db,'notices',careerDocId(slug)));const data=parseCareerNotice(slug,snap.exists()?snap.data():null);card.querySelector('[data-career-summary]').textContent=data.summary||base.summary;card.querySelector('[data-career-status]').textContent=data.hiringStatus||base.hiringStatus;card.querySelector('[data-career-period]').textContent=data.recruitmentPeriod||base.recruitmentPeriod;}catch(error){console.warn('Career card data unavailable',slug,error);}}

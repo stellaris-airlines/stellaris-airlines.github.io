@@ -1,6 +1,6 @@
 import { auth } from './firebase-config.js';
 import './auto-translate.js?v=20260820-auto-i18n-v3';
-import './site-content.js?v=20260820-site-content-v3';
+import './site-content.js?v=20260820-site-content-v4';
 import './digital-services.js?v=20260817-digital-v2';
 import './site-navigation.js?v=20260820-nav-v3';
 import {

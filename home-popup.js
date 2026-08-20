@@ -1,7 +1,7 @@
 import { db } from './firebase-config.js';
 import { doc, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 
-const DOC_ID='__home_popup__',MARK='[[STELLARIS_HOME_POPUP_V1]]';
+const DOC_ID='home_popup_config',MARK='[[STELLARIS_HOME_POPUP_V1]]';
 let latest=null;
 const lang=()=>{try{return localStorage.getItem('stellaris-language')==='en-US'?'en-US':'ko';}catch(error){return 'ko';}};
 const L=(ko,en)=>lang()==='en-US'?(en||ko):ko;

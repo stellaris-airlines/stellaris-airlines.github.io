@@ -2,6 +2,7 @@ import { auth, db } from '../firebase-config.js';
 import { addDoc, collection, doc, getDoc, serverTimestamp, Timestamp, updateDoc } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 import { createRichEditor, sanitizeRichHTML } from './rich-editor.js?v=20260820-rich-v1';
 import { uploadAdminImage } from './admin-media.js?v=20260820-media-v1';
+import './admin-popup.js?v=20260820-popup-v1';
 
 const ADMIN_EMAILS=new Set(['stellarisairlines@gmail.com','stellaris.web.dev@gmail.com']);
 const MARK='[[STELLARIS_BILINGUAL_V1]]';
@@ -28,7 +29,9 @@ function installFields(){
   enEditor=createRichEditor(form.elements.bodyEn,{placeholder:'Enter the English notice body.',uploadImage:file=>uploadAdminImage(file,'notices/en')});
 }
 function cleanAdminList(){
-  if(!list)return;list.querySelectorAll('.admin-notice-meta').forEach(meta=>{meta.textContent=meta.textContent.replace(/\s*·\s*조회\s*\d+/g,'');});
+  if(!list)return;
+  list.querySelectorAll('.admin-notice-item').forEach(article=>{if(article.querySelector('h3')?.textContent.trim()==='HOME_POPUP_CONFIG')article.remove();});
+  list.querySelectorAll('.admin-notice-meta').forEach(meta=>{meta.textContent=meta.textContent.replace(/\s*·\s*조회\s*\d+/g,'');});
   list.querySelectorAll('.admin-notice-item p').forEach(p=>{const data=unpackBody(p.textContent);if(String(p.textContent||'').startsWith(MARK))p.textContent=textOnly(data.ko);});
 }
 async function fillEnglishForEdit(){

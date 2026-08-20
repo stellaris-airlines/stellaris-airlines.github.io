@@ -69,7 +69,7 @@ installCommonChrome();
 
 const authSessionScript=document.createElement('script');
 authSessionScript.type='module';
-authSessionScript.src=A('auth-session.js?v=20260817-nav-i18n-v4');
+authSessionScript.src=A('auth-session.js?v=20260820-runtime-v1');
 document.head.appendChild(authSessionScript);
 
 document.querySelectorAll('.book-link').forEach(el=>el.textContent='항공권 예약하기');
@@ -117,10 +117,15 @@ function rememberAttrs(el){
 }
 
 function translateDOM(lang){
-  if(!i18nReady)return;
   currentLanguage=lang;
   document.documentElement.lang=lang==='ko'?'ko':lang;
   document.title='Stellaris Airlines';
+  updateLanguageUI(lang);
+  if(window.STELLARIS_AUTO_TRANSLATE){
+    void window.STELLARIS_AUTO_TRANSLATE.translate();
+    return;
+  }
+  if(!i18nReady)return;
   const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT,{acceptNode(node){
     const p=node.parentElement;
     if(!p||['SCRIPT','STYLE'].includes(p.tagName)||p.closest('[data-i18n-skip]')||p.closest('[data-i18n-dynamic]'))return NodeFilter.FILTER_REJECT;
@@ -145,7 +150,6 @@ function translateDOM(lang){
       if(attr==='value'&&'value' in el)el.value=translated;
     });
   });
-  updateLanguageUI(lang);
 }
 
 function updateLanguageUI(lang){
@@ -191,7 +195,7 @@ function bindSiteInteractions(){
     window.addEventListener('resize',()=>{if(window.innerWidth>900)closeMobileNav();});
     document.addEventListener('keydown',event=>{if(event.key==='Escape')closeMobileNav();});
   }
-  document.querySelectorAll('.demo-form').forEach(form=>form.addEventListener('submit',e=>{e.preventDefault();let p=form.querySelector('.demo-message');if(!p){p=document.createElement('p');p.className='demo-message';form.appendChild(p)}const source='현재는 웹사이트 UI 데모입니다. 실제 예약·회원 시스템은 추후 연동됩니다.';p.dataset.i18nDynamic=source;p.textContent=translateText(source,currentLanguage);}));
+  document.querySelectorAll('.demo-form').forEach(form=>form.addEventListener('submit',e=>{e.preventDefault();let p=form.querySelector('.demo-message');if(!p){p=document.createElement('p');p.className='demo-message';form.appendChild(p)}const source='현재는 웹사이트 UI 데모입니다. 실제 예약·회원 시스템은 추후 연동됩니다.';p.dataset.i18nDynamic=source;p.textContent=translateText(source,currentLanguage);queueMicrotask(()=>window.STELLARIS_AUTO_TRANSLATE?.translate?.());}));
   const reservationTabs=document.querySelectorAll('[data-reservation-tab]');reservationTabs.forEach(btn=>btn.addEventListener('click',()=>{reservationTabs.forEach(x=>x.classList.toggle('active',x===btn));document.querySelectorAll('[data-reservation-panel]').forEach(p=>p.hidden=p.dataset.reservationPanel!==btn.dataset.reservationTab);}));
   const bookingTabs=document.querySelectorAll('[data-booking-tab]');bookingTabs.forEach(btn=>btn.addEventListener('click',()=>{bookingTabs.forEach(x=>x.classList.toggle('active',x===btn));const rf=document.getElementById('returnField');if(rf)rf.hidden=btn.dataset.bookingTab==='oneway';}));
   const swap=document.getElementById('swapButton'),from=document.getElementById('fromInput'),to=document.getElementById('toInput');if(swap&&from&&to&&!document.querySelector('.booking-engine')){swap.addEventListener('click',()=>{[from.value,to.value]=[to.value,from.value];});}
@@ -204,26 +208,13 @@ let savedLanguage='ko';
 try{savedLanguage=localStorage.getItem('stellaris-language')||'ko';}catch(e){}
 if(!languageCodes.includes(savedLanguage))savedLanguage='ko';
 
-const I18N_VERSION='20260817-nav-i18n-v4';
-let extendedI18nLoaded=false;
-async function loadExtendedI18n(){
-  if(extendedI18nLoaded)return;
-  extendedI18nLoaded=true;
-  const path=location.pathname;
-  const modules=[];
-  if(/\/(services|baggage|inflight-service|payments-refunds|special-assistance|travel-alerts|special-liveries|hotel-car|news|careers|livery-gallery)(\/|$)/.test(path))modules.push(import(A(`service-careers-i18n.js?v=${I18N_VERSION}`)));
-  if(/\/(terms|international-passenger-conditions|international-cargo-conditions|legal-notices)(\/|$)/.test(path))modules.push(import(A(`legal-i18n.js?v=${I18N_VERSION}`)));
-  if(!modules.length)return;
-  await Promise.allSettled(modules);
-  window.dispatchEvent(new CustomEvent('stellaris:languagechange',{detail:{language:savedLanguage}}));
-}
+const I18N_VERSION='20260820-auto-i18n-v1';
 const finishI18n=()=>{
   const baseRows=window.STELLARIS_I18N?.rows||[];
   const extraRows=window.STELLARIS_EXTRA_I18N?.rows||[];
   dictionaries=normaliseDict({rows:[...baseRows,...extraRows]});
   i18nReady=true;
   setLanguage(savedLanguage,false);
-  loadExtendedI18n();
 };
 const loadExtraTranslations=()=>{
   const extraScript=document.createElement('script');

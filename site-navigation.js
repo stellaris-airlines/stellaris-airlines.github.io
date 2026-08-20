@@ -1,5 +1,5 @@
 import './site-v3.js?v=20260820-site-v3-2';
-import './hero-reset.js?v=20260820-hero-reset-v1';
+import './hero-reset.js?v=20260820-hero-reset-v2';
 
 if(!document.querySelector('link[data-site-v3-v2]')){
   const link=document.createElement('link');

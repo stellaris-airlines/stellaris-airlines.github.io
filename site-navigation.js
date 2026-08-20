@@ -28,6 +28,16 @@ function installMobileNav(){
   const mobile=document.getElementById('mobileNav');
   [['services/','전체 서비스'],['baggage/','수하물 서비스'],['inflight-service/','기내 서비스'],['payments-refunds/','결제 · 환불'],['special-assistance/','특별지원'],['travel-alerts/','여행알림'],['seats/','객실 · 좌석 소개'],['hotel-car/','호텔 · 렌터카'],['special-liveries/','특별도장 소개'],['livery-gallery/','도장갤러리'],['news/','뉴스'],['careers/','채용']].forEach(([p,l])=>addLink(mobile,p,l));
 }
+function instagramLink(){
+  const link=document.createElement('a');
+  link.href='https://www.instagram.com/flystellaris/';
+  link.target='_blank';link.rel='noopener noreferrer';
+  link.dataset.instagramLink='true';link.dataset.autoTranslateSkip='true';
+  link.setAttribute('aria-label','Stellaris Airlines Instagram');link.setAttribute('title','Stellaris Airlines Instagram');
+  link.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true" width="17" height="17"><rect x="3" y="3" width="18" height="18" rx="5" ry="5" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="17.4" cy="6.8" r="1.1" fill="currentColor"/></svg>';
+  Object.assign(link.style,{display:'inline-flex',alignItems:'center',justifyContent:'center',flex:'0 0 24px',width:'24px',height:'24px',padding:'0',margin:'0',color:'inherit',opacity:'.72',verticalAlign:'middle'});
+  return link;
+}
 function installFooterLinks(){
   const columns=[...document.querySelectorAll('.footer-columns>div')];
   const airline=columns[0],travel=columns[1],services=columns[2],support=columns[3];
@@ -36,23 +46,23 @@ function installFooterLinks(){
   addLink(services,'services/','전체 서비스');addLink(services,'baggage/','수하물 서비스');addLink(services,'inflight-service/','기내 서비스');addLink(services,'payments-refunds/','결제 · 환불');addLink(services,'special-assistance/','특별지원');addLink(services,'travel-alerts/','여행알림');addLink(services,'seats/','객실 · 좌석 소개');
   addLink(support,'notices/','공지사항');
   const legal=document.querySelector('.footer-bottom>div');
-  if(legal&&!legal.dataset.extendedLegal){
+  if(!legal)return;
+  if(!legal.dataset.extendedLegal){
     legal.dataset.extendedLegal='true';legal.innerHTML='';
-    [['terms/','웹사이트 이용약관'],['international-passenger-conditions/','국제여객 운송약관'],['international-cargo-conditions/','국제화물 운송약관'],['legal-notices/','기타 법률 고지'],['privacy/','개인정보처리방침']].forEach(([p,l])=>addLink(legal,p,l));
+    const termsGroup=document.createElement('span');
+    termsGroup.className='footer-terms-social';termsGroup.dataset.footerTermsSocial='true';
+    Object.assign(termsGroup.style,{display:'inline-flex',alignItems:'center',gap:'8px',whiteSpace:'nowrap',flex:'0 0 auto'});
+    const terms=document.createElement('a');terms.href=H('terms/');terms.textContent='웹사이트 이용약관';
+    termsGroup.append(terms,instagramLink());
+    legal.appendChild(termsGroup);
+    [['international-passenger-conditions/','국제여객 운송약관'],['international-cargo-conditions/','국제화물 운송약관'],['legal-notices/','기타 법률 고지'],['privacy/','개인정보처리방침']].forEach(([p,l])=>addLink(legal,p,l));
   }
+  Object.assign(legal.style,{display:'flex',alignItems:'center',justifyContent:'flex-end',flexWrap:'wrap',columnGap:'28px',rowGap:'10px'});
 }
-function installInstagram(){
-  const bottom=document.querySelector('.footer-bottom');
-  if(!bottom||bottom.querySelector('[data-instagram-link]'))return;
-  const copyright=bottom.querySelector(':scope > span');
-  const link=document.createElement('a');
-  link.href='https://www.instagram.com/flystellaris/';
-  link.target='_blank';link.rel='noopener noreferrer';
-  link.dataset.instagramLink='true';link.dataset.autoTranslateSkip='true';
-  link.setAttribute('aria-label','Stellaris Airlines Instagram');link.setAttribute('title','Stellaris Airlines Instagram');
-  link.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18"><rect x="3" y="3" width="18" height="18" rx="5" ry="5" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="17.4" cy="6.8" r="1.1" fill="currentColor"/></svg>';
-  Object.assign(link.style,{display:'inline-flex',alignItems:'center',justifyContent:'center',width:'30px',height:'30px',marginLeft:'10px',color:'inherit',opacity:'.72',verticalAlign:'middle'});
-  if(copyright)copyright.insertAdjacentElement('afterend',link);else bottom.prepend(link);
+function removeLegacyInstagram(){
+  document.querySelectorAll('[data-instagram-link]').forEach(link=>{
+    if(!link.closest('[data-footer-terms-social]'))link.remove();
+  });
 }
 function dedupeLinks(){
   document.querySelectorAll('.mega-links,.mobile-nav,.footer-columns>div').forEach(host=>{
@@ -60,8 +70,9 @@ function dedupeLinks(){
     [...host.querySelectorAll(':scope > a')].forEach(link=>{const key=link.href;if(seen.has(key))link.remove();else seen.add(key);});
   });
 }
-function install(){installServicesNav();installMobileNav();installFooterLinks();installInstagram();dedupeLinks();}
+function retranslate(){queueMicrotask(()=>window.STELLARIS_AUTO_TRANSLATE?.translate?.());}
+function install(){installServicesNav();installMobileNav();installFooterLinks();removeLegacyInstagram();dedupeLinks();retranslate();}
 install();
 setTimeout(install,250);
 setTimeout(install,1000);
-window.addEventListener('stellaris:languagechange',()=>setTimeout(()=>window.STELLARIS_AUTO_TRANSLATE?.translate?.(),0));
+window.addEventListener('stellaris:languagechange',()=>setTimeout(install,0));

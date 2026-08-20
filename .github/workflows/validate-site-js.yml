@@ -12,6 +12,10 @@ on:
       - "site-v3.js"
       - "site-v3.css"
       - "site-content.js"
+      - "home-popup.js"
+      - "home-popup.css"
+      - "gmail-inquiry-fix.js"
+      - "legacy-popup-kill.js"
       - "digital-services.js"
       - "travel-service-core.js"
       - "service-tools.js"
@@ -19,6 +23,8 @@ on:
       - "service-careers-i18n.js"
       - "legal-i18n.js"
       - "firebase-config.js"
+      - "storage.rules"
+      - "firebase.json"
       - "login/**/*.js"
       - "signup/**/*.js"
       - "flight-information/**/*.js"
@@ -27,7 +33,9 @@ on:
       - "find-your-reservations/**/*.js"
       - "view-my-starmiles/**/*.js"
       - "admin/**/*.js"
+      - "admin/**/*.css"
       - "notices/**/*.js"
+      - "notices/**/*.css"
       - "check-in/**/*.js"
       - "boarding-pass/**/*.js"
       - "booking-confirmation/**/*.js"
@@ -47,7 +55,7 @@ jobs:
       - name: Check JavaScript syntax
         shell: bash
         run: |
-          for file in app.js operations-model.js auth-session.js auto-translate.js site-navigation.js site-v3.js site-content.js digital-services.js travel-service-core.js service-tools.js site-experience-extension-v2.js service-careers-i18n.js legal-i18n.js firebase-config.js translations.js translations-extra.js; do
+          for file in app.js operations-model.js auth-session.js auto-translate.js site-navigation.js site-v3.js site-content.js home-popup.js gmail-inquiry-fix.js legacy-popup-kill.js digital-services.js travel-service-core.js service-tools.js site-experience-extension-v2.js service-careers-i18n.js legal-i18n.js firebase-config.js translations.js translations-extra.js; do
             node --input-type=module --check < "$file"
           done
           while IFS= read -r -d '' file; do
@@ -83,15 +91,23 @@ jobs:
           test -f site-navigation.js
           test -f site-v3.js
           test -f site-v3.css
+          test -f home-popup.js
+          test -f home-popup.css
+          test -f gmail-inquiry-fix.js
+          test -f legacy-popup-kill.js
+          test -f storage.rules
           test -f admin/admin-bilingual.js
           test -f admin/admin-home-bilingual.js
+          test -f admin/admin-popup.js
+          test -f admin/admin-media.js
+          test -f admin/rich-editor.js
           test -f book-your-journey/booking-stability.js
           grep -q "출발 예정 시각 24시간 전" check-in/index.html
           grep -q "data-operation-form" admin/index.html
           grep -q "admin-home-bilingual.js?v=20260820-home-bilingual-v1" admin/index.html
-          grep -q "admin-bilingual.js?v=20260820-bilingual-v2" admin/index.html
+          grep -q "admin-bilingual.js?v=20260820-bilingual-v3" admin/index.html
           grep -q "data-notice-search" notices/index.html
-          grep -q "notices.js?v=20260820-notices-v6" notices/index.html
+          grep -q "notices.js?v=20260820-notices-rich-v1" notices/index.html
           grep -q "digital-services.js" auth-session.js
           grep -q "auto-translate.js?v=20260820-auto-i18n-v3" auth-session.js
           grep -q "site-navigation.js?v=20260820-nav-v3" auth-session.js
@@ -100,5 +116,7 @@ jobs:
           grep -q "api.open-meteo.com" site-v3.js
           grep -q "STELLARIS_BILINGUAL_V1" admin/admin-bilingual.js
           grep -q "STELLARIS_BILINGUAL_V1" notices/notices.js
-          grep -q "\[\[EN\]\]" admin/admin-home-bilingual.js
-          grep -q "\[\[EN\]\]" site-content.js
+          grep -q "STELLARIS_HOME_POPUP_V1" admin/admin-popup.js
+          grep -q "STELLARIS_HOME_POPUP_V1" home-popup.js
+          grep -q "mail.google.com" gmail-inquiry-fix.js
+          grep -q "firebase.storage" storage.rules

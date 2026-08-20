@@ -7,7 +7,7 @@ const SEP='[[EN]]';
 const bannerForm=document.querySelector('[data-banner-form]');
 const homeForm=document.querySelector('[data-home-form]');
 const statusBox=document.querySelector('[data-admin-status]');
-const HOME_LIMITS={promotionTitle:80,promotionBody:500,routeTitle:80,routeBody:500,popupTitle:80,popupBody:300};
+const HOME_LIMITS={popupTitle:80,popupBody:300};
 
 function status(message,type=''){if(!statusBox)return;statusBox.textContent=message;statusBox.className='admin-status'+(type?' '+type:'');}
 function admin(user=auth.currentUser){return Boolean(user&&ADMIN_EMAILS.has(String(user.email||'').toLowerCase()));}
@@ -15,12 +15,20 @@ function pack(ko,en){const a=String(ko||'').trim(),b=String(en||'').trim();retur
 function unpack(value){const raw=String(value||''),at=raw.indexOf(SEP);return at<0?{ko:raw,en:''}:{ko:raw.slice(0,at),en:raw.slice(at+SEP.length)};}
 function within(value,limit,label){if(String(value||'').length<=limit)return true;alert(`${label} 한국어/영어 합산 길이가 저장 한도를 초과합니다.`);return false;}
 function addEnglishField(form,afterName,newName,label,textarea=false,rows=3){if(!form||form.elements[newName])return;const base=form.elements[afterName]?.closest('label');if(!base)return;const field=document.createElement('label');field.className='admin-bilingual-field';field.textContent=label;const input=document.createElement(textarea?'textarea':'input');input.name=newName;if(textarea)input.rows=rows;field.append(input);base.insertAdjacentElement('afterend',field);}
-function lockHeroFields(){if(!homeForm)return;const labels=[homeForm.elements.heroTitle?.closest('label'),homeForm.elements.heroBody?.closest('label')].filter(Boolean);labels.forEach(label=>label.remove());if(!homeForm.querySelector('[data-hero-fixed-note]')){const note=document.createElement('p');note.dataset.heroFixedNote='true';note.className='admin-status';note.textContent='홈 Hero는 기본 디자인으로 초기화되어 고정 관리됩니다. 관리자 페이지에서는 수정하지 않습니다.';homeForm.prepend(note);}}
+function removeFixedHomeFields(){
+  if(!homeForm)return;
+  ['heroTitle','heroBody','promotionTitle','promotionBody','routeTitle','routeBody'].forEach(name=>homeForm.elements[name]?.closest('label')?.remove());
+  homeForm.querySelectorAll('.admin-grid').forEach(grid=>{if(!grid.querySelector('label'))grid.remove();});
+  if(!homeForm.querySelector('[data-home-fixed-note]')){
+    const note=document.createElement('p');note.dataset.homeFixedNote='true';note.className='admin-status';note.textContent='홈 Hero와 중간 안내 영역은 기본 디자인으로 고정되어 관리자 페이지에서 수정하지 않습니다.';homeForm.prepend(note);
+  }
+}
 function install(){
-  lockHeroFields();
+  removeFixedHomeFields();
   addEnglishField(bannerForm,'text','textEn','Banner text — English');
   addEnglishField(bannerForm,'linkLabel','linkLabelEn','Banner link label — English');
-  [['promotionTitle','promotionTitleEn','Promotion title — English',false],['promotionBody','promotionBodyEn','Promotion body — English',true],['routeTitle','routeTitleEn','Route title — English',false],['routeBody','routeBodyEn','Route body — English',true],['popupTitle','popupTitleEn','Popup title — English',false],['popupBody','popupBodyEn','Popup body — English',true]].forEach(([name,enName,label,area])=>addEnglishField(homeForm,name,enName,label,area));
+  addEnglishField(homeForm,'popupTitle','popupTitleEn','Popup title — English');
+  addEnglishField(homeForm,'popupBody','popupBodyEn','Popup body — English',true);
 }
 async function load(){
   if(!admin())return;
@@ -39,6 +47,6 @@ homeForm?.addEventListener('submit',async event=>{
   event.preventDefault();event.stopImmediatePropagation();if(!admin()){alert('관리자 로그인을 확인해 주세요.');return;}
   const payload={popupActive:homeForm.elements.popupActive.checked,updatedAt:serverTimestamp()};
   for(const [name,limit] of Object.entries(HOME_LIMITS)){const value=pack(homeForm.elements[name]?.value,homeForm.elements[`${name}En`]?.value);if(!within(value,limit,name))return;payload[name]=value;}
-  try{await setDoc(doc(db,'siteContent','homeExperience'),payload,{merge:true});status('한국어/영어 홈 콘텐츠를 저장했습니다.','success');}catch(error){status(`홈 콘텐츠 저장 실패: ${String(error?.message||error)}`,'error');}
+  try{await setDoc(doc(db,'siteContent','homeExperience'),payload,{merge:true});status('한국어/영어 홈 팝업 콘텐츠를 저장했습니다.','success');}catch(error){status(`홈 콘텐츠 저장 실패: ${String(error?.message||error)}`,'error');}
 },true);
 onAuthStateChanged(auth,user=>{if(admin(user))setTimeout(()=>void load(),350);});

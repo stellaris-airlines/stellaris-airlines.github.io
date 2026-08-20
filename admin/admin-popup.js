@@ -16,7 +16,8 @@ function pack(data){return MARK+JSON.stringify({...data,htmlKo:sanitizeRichHTML(
 function unpack(raw=''){const text=String(raw||'');if(!text.startsWith(MARK))return null;try{return JSON.parse(text.slice(MARK.length));}catch(error){return null;}}
 function install(){
   const consoleHost=document.querySelector('[data-admin-console]');if(!consoleHost||document.querySelector('[data-popup-manager]'))return;
-  const firstPanel=consoleHost.querySelector('.admin-panel');const section=document.createElement('section');section.className='admin-panel';section.dataset.popupManager='true';
+  const legacyHome=document.querySelector('[data-home-form]')?.closest('.admin-panel');if(legacyHome)legacyHome.hidden=true;
+  const firstPanel=consoleHost.querySelector('.admin-panel:not([hidden])');const section=document.createElement('section');section.className='admin-panel';section.dataset.popupManager='true';
   section.innerHTML=`<div class="admin-panel-head"><div><p class="eyebrow">HOME POPUP</p><h2>홈 팝업 관리</h2></div><span>이미지형 또는 글형</span></div>
   <form class="admin-form" data-popup-form>
     <label class="check-row"><input type="checkbox" name="active"><span>팝업 표시</span></label>

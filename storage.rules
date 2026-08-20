@@ -1,0 +1,22 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email is string
+        && request.auth.token.email in [
+          'stellarisairlines@gmail.com',
+          'stellaris.web.dev@gmail.com'
+        ];
+    }
+
+    match /site-content/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin()
+        && request.resource != null
+        && request.resource.size < 8 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+  }
+}

@@ -15,15 +15,7 @@ if(!document.querySelector('link[data-stellaris-fixes]')){
   document.head.appendChild(link);
 }
 
-const languageNames={
-  ko:'한국어',
-  'en-US':'English (US)',
-  'en-GB':'English (UK)',
-  'zh-CN':'中文',
-  ja:'日本語',
-  es:'Español',
-  fr:'Français'
-};
+const languageNames={ko:'한국어','en-US':'English'};
 const languageCodes=Object.keys(languageNames);
 
 const languageControl=()=>`<div class="language-switcher" data-language-switcher data-i18n-skip>
@@ -69,7 +61,7 @@ installCommonChrome();
 
 const authSessionScript=document.createElement('script');
 authSessionScript.type='module';
-authSessionScript.src=A('auth-session.js?v=20260820-runtime-v2');
+authSessionScript.src=A('auth-session.js?v=20260820-runtime-v3');
 document.head.appendChild(authSessionScript);
 
 document.querySelectorAll('.book-link').forEach(el=>el.textContent='항공권 예약하기');
@@ -81,18 +73,8 @@ let dictionaries={};
 let i18nReady=false;
 
 function normaliseDict(data){
-  const result={};
-  languageCodes.forEach(code=>result[code]={});
-  (data?.rows||[]).forEach(row=>{
-    if(!Array.isArray(row)||!row[0])return;
-    const source=row[0];
-    result['en-US'][source]=row[1]??source;
-    result['en-GB'][source]=row[2]??row[1]??source;
-    result['zh-CN'][source]=row[3]??source;
-    result.ja[source]=row[4]??source;
-    result.es[source]=row[5]??source;
-    result.fr[source]=row[6]??source;
-  });
+  const result={ko:{},'en-US':{}};
+  (data?.rows||[]).forEach(row=>{if(!Array.isArray(row)||!row[0])return;result['en-US'][row[0]]=row[1]??row[0];});
   return result;
 }
 
@@ -109,125 +91,33 @@ function translateText(raw,lang){
 function rememberAttrs(el){
   if(originalAttrs.has(el))return originalAttrs.get(el);
   const saved={};
-  ['placeholder','aria-label','title','value'].forEach(attr=>{
-    if(el.hasAttribute(attr))saved[attr]=el.getAttribute(attr);
-  });
-  originalAttrs.set(el,saved);
-  return saved;
+  ['placeholder','aria-label','title','value'].forEach(attr=>{if(el.hasAttribute(attr))saved[attr]=el.getAttribute(attr);});
+  originalAttrs.set(el,saved);return saved;
 }
 
 function translateDOM(lang){
-  currentLanguage=lang;
-  document.documentElement.lang=lang==='ko'?'ko':lang;
-  document.title='Stellaris Airlines';
-  updateLanguageUI(lang);
-  if(window.STELLARIS_AUTO_TRANSLATE){
-    void window.STELLARIS_AUTO_TRANSLATE.translate();
-    return;
-  }
+  currentLanguage=lang;document.documentElement.lang=lang;document.title='Stellaris Airlines';updateLanguageUI(lang);
+  if(window.STELLARIS_AUTO_TRANSLATE){void window.STELLARIS_AUTO_TRANSLATE.translate();return;}
   if(!i18nReady)return;
-  const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT,{acceptNode(node){
-    const p=node.parentElement;
-    if(!p||['SCRIPT','STYLE'].includes(p.tagName)||p.closest('[data-i18n-skip]')||p.closest('[data-i18n-dynamic]'))return NodeFilter.FILTER_REJECT;
-    return node.nodeValue.trim()?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_REJECT;
-  }});
-  let node;
-  while((node=walker.nextNode())){
-    if(!originalText.has(node))originalText.set(node,node.nodeValue);
-    const original=originalText.get(node);
-    const trimmed=original.trim();
-    const translated=translateText(trimmed,lang);
-    node.nodeValue=original.replace(trimmed,translated);
-  }
+  const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT,{acceptNode(node){const p=node.parentElement;if(!p||['SCRIPT','STYLE'].includes(p.tagName)||p.closest('[data-i18n-skip]')||p.closest('[data-i18n-dynamic]'))return NodeFilter.FILTER_REJECT;return node.nodeValue.trim()?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_REJECT;}});
+  let node;while((node=walker.nextNode())){if(!originalText.has(node))originalText.set(node,node.nodeValue);const original=originalText.get(node),trimmed=original.trim(),translated=translateText(trimmed,lang);node.nodeValue=original.replace(trimmed,translated);}
   document.querySelectorAll('[data-i18n-dynamic]').forEach(el=>{el.textContent=translateText(el.dataset.i18nDynamic||'',lang);});
-  document.querySelectorAll('[placeholder],[aria-label],[title],input[value]').forEach(el=>{
-    if(el.closest('[data-i18n-skip]'))return;
-    const saved=rememberAttrs(el);
-    Object.entries(saved).forEach(([attr,value])=>{
-      if(attr==='value'&&el.type&&['date','hidden','submit','button'].includes(el.type))return;
-      const translated=translateText(value,lang);
-      el.setAttribute(attr,translated);
-      if(attr==='value'&&'value' in el)el.value=translated;
-    });
-  });
+  document.querySelectorAll('[placeholder],[aria-label],[title],input[value]').forEach(el=>{if(el.closest('[data-i18n-skip]'))return;const saved=rememberAttrs(el);Object.entries(saved).forEach(([attr,value])=>{if(attr==='value'&&el.type&&['date','hidden','submit','button'].includes(el.type))return;const translated=translateText(value,lang);el.setAttribute(attr,translated);if(attr==='value'&&'value' in el)el.value=translated;});});
 }
 
-function updateLanguageUI(lang){
-  document.querySelectorAll('[data-language-switcher]').forEach(switcher=>{
-    const current=switcher.querySelector('.language-current');
-    if(current)current.textContent=languageNames[lang]||languageNames.ko;
-    switcher.querySelectorAll('.language-option').forEach(option=>{
-      const selected=option.dataset.lang===lang;
-      option.classList.toggle('is-selected',selected);
-      option.setAttribute('aria-selected',String(selected));
-    });
-  });
-}
-
-function setLanguage(lang,persist=true){
-  if(!languageCodes.includes(lang))lang='ko';
-  if(persist){try{localStorage.setItem('stellaris-language',lang);}catch(e){}}
-  translateDOM(lang);
-  if(persist)window.dispatchEvent(new CustomEvent('stellaris:languagechange',{detail:{language:lang}}));
-}
-
-function bindLanguageControls(){
-  document.querySelectorAll('[data-language-switcher]').forEach(switcher=>{
-    const trigger=switcher.querySelector('.language-trigger');
-    const menu=switcher.querySelector('.language-menu');
-    if(!trigger||!menu)return;
-    const close=()=>{menu.hidden=true;trigger.setAttribute('aria-expanded','false');switcher.classList.remove('is-open');};
-    const open=()=>{menu.hidden=false;trigger.setAttribute('aria-expanded','true');switcher.classList.add('is-open');};
-    trigger.addEventListener('click',e=>{e.stopPropagation();menu.hidden?open():close();});
-    switcher.querySelectorAll('.language-option').forEach(option=>option.addEventListener('click',()=>{setLanguage(option.dataset.lang,true);close();}));
-    document.addEventListener('click',e=>{if(!switcher.contains(e.target))close();});
-    document.addEventListener('keydown',e=>{if(e.key==='Escape')close();});
-  });
-}
-
-function bindSiteInteractions(){
-  const mobileButton=document.getElementById('mobileMenuButton'),mobileNav=document.getElementById('mobileNav');
-  if(mobileButton&&mobileNav){
-    const closeMobileNav=()=>{mobileButton.setAttribute('aria-expanded','false');mobileNav.hidden=true;};
-    mobileButton.addEventListener('click',()=>{const open=mobileButton.getAttribute('aria-expanded')==='true';mobileButton.setAttribute('aria-expanded',String(!open));mobileNav.hidden=open;});
-    mobileNav.addEventListener('click',event=>{if(event.target.closest('a'))closeMobileNav();});
-    window.addEventListener('hashchange',closeMobileNav);
-    window.addEventListener('resize',()=>{if(window.innerWidth>900)closeMobileNav();});
-    document.addEventListener('keydown',event=>{if(event.key==='Escape')closeMobileNav();});
-  }
+function updateLanguageUI(lang){document.querySelectorAll('[data-language-switcher]').forEach(switcher=>{const current=switcher.querySelector('.language-current');if(current)current.textContent=languageNames[lang]||languageNames.ko;switcher.querySelectorAll('.language-option').forEach(option=>{const selected=option.dataset.lang===lang;option.classList.toggle('is-selected',selected);option.setAttribute('aria-selected',String(selected));});});}
+function setLanguage(lang,persist=true){if(!languageCodes.includes(lang))lang='ko';if(persist){try{localStorage.setItem('stellaris-language',lang);}catch(e){}}translateDOM(lang);if(persist)window.dispatchEvent(new CustomEvent('stellaris:languagechange',{detail:{language:lang}}));}
+function bindLanguageControls(){document.querySelectorAll('[data-language-switcher]').forEach(switcher=>{const trigger=switcher.querySelector('.language-trigger'),menu=switcher.querySelector('.language-menu');if(!trigger||!menu)return;const close=()=>{menu.hidden=true;trigger.setAttribute('aria-expanded','false');switcher.classList.remove('is-open');};const open=()=>{menu.hidden=false;trigger.setAttribute('aria-expanded','true');switcher.classList.add('is-open');};trigger.addEventListener('click',e=>{e.stopPropagation();menu.hidden?open():close();});switcher.querySelectorAll('.language-option').forEach(option=>option.addEventListener('click',()=>{setLanguage(option.dataset.lang,true);close();}));document.addEventListener('click',e=>{if(!switcher.contains(e.target))close();});document.addEventListener('keydown',e=>{if(e.key==='Escape')close();});});}
+function bindSiteInteractions(){const mobileButton=document.getElementById('mobileMenuButton'),mobileNav=document.getElementById('mobileNav');if(mobileButton&&mobileNav){const closeMobileNav=()=>{mobileButton.setAttribute('aria-expanded','false');mobileNav.hidden=true;};mobileButton.addEventListener('click',()=>{const open=mobileButton.getAttribute('aria-expanded')==='true';mobileButton.setAttribute('aria-expanded',String(!open));mobileNav.hidden=open;});mobileNav.addEventListener('click',event=>{if(event.target.closest('a'))closeMobileNav();});window.addEventListener('hashchange',closeMobileNav);window.addEventListener('resize',()=>{if(window.innerWidth>900)closeMobileNav();});document.addEventListener('keydown',event=>{if(event.key==='Escape')closeMobileNav();});}
   document.querySelectorAll('.demo-form').forEach(form=>form.addEventListener('submit',e=>{e.preventDefault();let p=form.querySelector('.demo-message');if(!p){p=document.createElement('p');p.className='demo-message';form.appendChild(p)}const source='현재는 웹사이트 UI 데모입니다. 실제 예약·회원 시스템은 추후 연동됩니다.';p.dataset.i18nDynamic=source;p.textContent=translateText(source,currentLanguage);queueMicrotask(()=>window.STELLARIS_AUTO_TRANSLATE?.translate?.());}));
   const reservationTabs=document.querySelectorAll('[data-reservation-tab]');reservationTabs.forEach(btn=>btn.addEventListener('click',()=>{reservationTabs.forEach(x=>x.classList.toggle('active',x===btn));document.querySelectorAll('[data-reservation-panel]').forEach(p=>p.hidden=p.dataset.reservationPanel!==btn.dataset.reservationTab);}));
   const bookingTabs=document.querySelectorAll('[data-booking-tab]');bookingTabs.forEach(btn=>btn.addEventListener('click',()=>{bookingTabs.forEach(x=>x.classList.toggle('active',x===btn));const rf=document.getElementById('returnField');if(rf)rf.hidden=btn.dataset.bookingTab==='oneway';}));
-  const swap=document.getElementById('swapButton'),from=document.getElementById('fromInput'),to=document.getElementById('toInput');if(swap&&from&&to&&!document.querySelector('.booking-engine')){swap.addEventListener('click',()=>{[from.value,to.value]=[to.value,from.value];});}
-}
+  const swap=document.getElementById('swapButton'),from=document.getElementById('fromInput'),to=document.getElementById('toInput');if(swap&&from&&to&&!document.querySelector('.booking-engine'))swap.addEventListener('click',()=>{[from.value,to.value]=[to.value,from.value];});}
 
-bindLanguageControls();
-bindSiteInteractions();
-
-let savedLanguage='ko';
-try{savedLanguage=localStorage.getItem('stellaris-language')||'ko';}catch(e){}
-if(!languageCodes.includes(savedLanguage))savedLanguage='ko';
-
-const I18N_VERSION='20260820-auto-i18n-v2';
-const finishI18n=()=>{
-  const baseRows=window.STELLARIS_I18N?.rows||[];
-  const extraRows=window.STELLARIS_EXTRA_I18N?.rows||[];
-  dictionaries=normaliseDict({rows:[...baseRows,...extraRows]});
-  i18nReady=true;
-  setLanguage(savedLanguage,false);
-};
-const loadExtraTranslations=()=>{
-  const extraScript=document.createElement('script');
-  extraScript.src=A(`translations-extra.js?v=${I18N_VERSION}`);
-  extraScript.defer=true;
-  extraScript.onload=finishI18n;
-  extraScript.onerror=finishI18n;
-  document.head.appendChild(extraScript);
-};
-const dataScript=document.createElement('script');
-dataScript.src=A(`translations.js?v=${I18N_VERSION}`);
-dataScript.defer=true;
-dataScript.onload=loadExtraTranslations;
-dataScript.onerror=()=>{window.STELLARIS_I18N={rows:[]};loadExtraTranslations();};
-document.head.appendChild(dataScript);
+bindLanguageControls();bindSiteInteractions();
+let savedLanguage='ko';try{savedLanguage=localStorage.getItem('stellaris-language')||'ko';}catch(e){}if(!languageCodes.includes(savedLanguage))savedLanguage='ko';
+const I18N_VERSION='20260820-auto-i18n-v3';
+const finishI18n=()=>{const baseRows=window.STELLARIS_I18N?.rows||[],extraRows=window.STELLARIS_EXTRA_I18N?.rows||[];dictionaries=normaliseDict({rows:[...baseRows,...extraRows]});i18nReady=true;setLanguage(savedLanguage,false);};
+const loadExtraTranslations=()=>{const extraScript=document.createElement('script');extraScript.src=A(`translations-extra.js?v=${I18N_VERSION}`);extraScript.defer=true;extraScript.onload=finishI18n;extraScript.onerror=finishI18n;document.head.appendChild(extraScript);};
+const dataScript=document.createElement('script');dataScript.src=A(`translations.js?v=${I18N_VERSION}`);dataScript.defer=true;dataScript.onload=loadExtraTranslations;dataScript.onerror=()=>{window.STELLARIS_I18N={rows:[]};loadExtraTranslations();};document.head.appendChild(dataScript);
 })();

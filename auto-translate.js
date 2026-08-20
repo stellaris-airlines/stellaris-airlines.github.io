@@ -108,7 +108,10 @@ function rememberAttributes(element){
 async function translateTextNode(node,target,token){
   if(token!==generation||!node?.parentElement||shouldSkipElement(node.parentElement))return;
   const original=rememberText(node);
-  if(target==='ko'){textRendered.set(node,node.nodeValue);return;}
+  if(target==='ko'){
+    if(node.nodeValue!==original)node.nodeValue=original;
+    textRendered.set(node,original);return;
+  }
   const translated=await translateString(original,target);
   if(token!==generation||!node.isConnected)return;
   if(node.nodeValue!==translated)node.nodeValue=translated;

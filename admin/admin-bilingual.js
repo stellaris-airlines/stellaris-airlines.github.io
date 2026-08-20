@@ -9,7 +9,7 @@ const MARK='[[STELLARIS_BILINGUAL_V1]]';
 const form=document.querySelector('[data-notice-form]');
 const list=document.querySelector('[data-admin-notice-list]');
 const statusBox=document.querySelector('[data-admin-status]');
-let koEditor=null,enEditor=null;
+let koEditor=null,enEditor=null,cleanQueued=false;
 
 function isAdmin(){return Boolean(auth.currentUser&&ADMIN_EMAILS.has(String(auth.currentUser.email||'').toLowerCase()));}
 function status(message,type=''){if(!statusBox)return;statusBox.textContent=message;statusBox.className='admin-status'+(type?' '+type:'');}
@@ -29,19 +29,24 @@ function installFields(){
   enEditor=createRichEditor(form.elements.bodyEn,{placeholder:'Enter the English notice body.',uploadImage:file=>uploadAdminImage(file,'notices/en')});
 }
 function cleanAdminList(){
+  cleanQueued=false;
   if(!list)return;
   list.querySelectorAll('.admin-notice-item').forEach(article=>{if(article.querySelector('h3')?.textContent.trim()==='HOME_POPUP_CONFIG')article.remove();});
-  list.querySelectorAll('.admin-notice-meta').forEach(meta=>{meta.textContent=meta.textContent.replace(/\s*·\s*조회\s*\d+/g,'');});
-  list.querySelectorAll('.admin-notice-item p').forEach(p=>{const data=unpackBody(p.textContent);if(String(p.textContent||'').startsWith(MARK))p.textContent=textOnly(data.ko);});
+  list.querySelectorAll('.admin-notice-meta').forEach(meta=>{const current=meta.textContent||'',next=current.replace(/\s*·\s*조회\s*\d+/g,'');if(next!==current)meta.textContent=next;});
+  list.querySelectorAll('.admin-notice-item p').forEach(p=>{const current=String(p.textContent||'');if(!current.startsWith(MARK))return;const next=textOnly(unpackBody(current).ko);if(next!==current)p.textContent=next;});
 }
+function scheduleClean(){if(cleanQueued)return;cleanQueued=true;requestAnimationFrame(cleanAdminList);}
 async function fillEnglishForEdit(){
   const id=form?.elements.noticeId?.value?.trim();if(!id)return;try{const snap=await getDoc(doc(db,'notices',id));if(!snap.exists())return;const data=snap.data(),packed=unpackBody(data.body);form.elements.title.value=data.title||'';form.elements.titleEn.value=packed.enTitle;koEditor?.setHTML(packed.ko);enEditor?.setHTML(packed.en);}catch(error){}
 }
 function resetEditors(){koEditor?.clear();enEditor?.clear();}
 
 installFields();
-if(list){list.addEventListener('click',event=>{const button=event.target.closest('button');if(!button||button.textContent.trim()!=='수정')return;setTimeout(()=>void fillEnglishForEdit(),0);},true);new MutationObserver(cleanAdminList).observe(list,{childList:true,subtree:true,characterData:true});}
-setTimeout(cleanAdminList,500);
+if(list){
+  list.addEventListener('click',event=>{const button=event.target.closest('button');if(!button||button.textContent.trim()!=='수정')return;setTimeout(()=>void fillEnglishForEdit(),0);},true);
+  new MutationObserver(scheduleClean).observe(list,{childList:true,subtree:true});
+}
+setTimeout(scheduleClean,500);
 form?.querySelector('[data-notice-cancel]')?.addEventListener('click',()=>setTimeout(resetEditors,0),true);
 
 form?.addEventListener('submit',async event=>{

@@ -1,9 +1,8 @@
 import { auth } from './firebase-config.js';
+import './auto-translate.js?v=20260820-auto-i18n-v1';
 import './site-content.js?v=20260817-digital-v2';
 import './digital-services.js?v=20260817-digital-v2';
-import './site-experience-extension-v2.js?v=20260817-nav-i18n-v4';
-import './service-careers-i18n.js?v=20260817-nav-i18n-v4';
-import './legal-i18n.js?v=20260817-nav-i18n-v4';
+import './site-navigation.js?v=20260820-nav-v1';
 import {
   browserLocalPersistence,
   onAuthStateChanged,
@@ -77,8 +76,8 @@ function installExtendedNavigation() {
   const checkinHref=rootHref('check-in/');
   const boardingPassHref=rootHref('boarding-pass/');
   const myPageHref=rootHref('my-page/');
-  const travelMenu=[...document.querySelectorAll('.mega-title strong')].find(el=>el.textContent.trim()==='여행 준비')?.closest('.mega-inner')?.querySelector('.mega-links');
-  const supportMenu=[...document.querySelectorAll('.mega-title strong')].find(el=>el.textContent.trim()==='지원 센터')?.closest('.mega-inner')?.querySelector('.mega-links');
+  const travelMenu=[...document.querySelectorAll('.main-nav .nav-item')].find(el=>el.querySelector(':scope > a')?.href===rootHref('travel-info/'))?.querySelector('.mega-links');
+  const supportMenu=[...document.querySelectorAll('.main-nav .nav-item')].find(el=>el.querySelector(':scope > a')?.href===rootHref('support/'))?.querySelector('.mega-links');
   addLinkOnce(travelMenu,seatsHref,'좌석 안내');
   addLinkOnce(travelMenu,checkinHref,'온라인 체크인');
   addLinkOnce(travelMenu,boardingPassHref,'모바일 탑승권');
@@ -91,16 +90,12 @@ function installExtendedNavigation() {
   addLinkOnce(mobile,myPageHref,'My Page');
   addLinkOnce(mobile,noticesHref,'공지사항');
   const footerColumns=document.querySelectorAll('.footer-columns>div');
-  footerColumns.forEach(column=>{
-    const title=column.querySelector('strong')?.textContent.trim();
-    if(title==='서비스'){
-      addLinkOnce(column,seatsHref,'좌석 안내');
-      addLinkOnce(column,checkinHref,'온라인 체크인');
-      addLinkOnce(column,boardingPassHref,'모바일 탑승권');
-      addLinkOnce(column,myPageHref,'My Page');
-    }
-    if(title==='지원')addLinkOnce(column,noticesHref,'공지사항');
-  });
+  const services=footerColumns[2],support=footerColumns[3];
+  addLinkOnce(services,seatsHref,'좌석 안내');
+  addLinkOnce(services,checkinHref,'온라인 체크인');
+  addLinkOnce(services,boardingPassHref,'모바일 탑승권');
+  addLinkOnce(services,myPageHref,'My Page');
+  addLinkOnce(support,noticesHref,'공지사항');
   const copyright=document.querySelector('.footer-bottom>span');
   if(copyright)copyright.textContent='ⓒ 2026 STELLARIS AIRLINES. All rights reserved.';
   installNoticeShortcut();
@@ -119,17 +114,20 @@ function renderGuest() {
   userElements().forEach((element) => { element.hidden = true; });
   logoutElements().forEach((element) => { element.hidden = true; });
   installAdminLink(null);translateAccountNavigation();installExtendedNavigation();
+  queueMicrotask(()=>window.STELLARIS_AUTO_TRANSLATE?.translate?.());
 }
 
 function renderUser(user) {
   guestElements().forEach((element) => { element.hidden = true; });
   userElements().forEach((element) => {
     element.hidden = false;
+    element.dataset.autoTranslateSkip='true';
     element.textContent = user.displayName || user.email || 'Stellaris Member';
   });
   logoutElements().forEach((element) => { element.hidden = false; });
   document.querySelectorAll('[data-mypage-tool]').forEach(element=>{element.hidden=false;});
   installAdminLink(user);translateAccountNavigation();installExtendedNavigation();
+  queueMicrotask(()=>window.STELLARIS_AUTO_TRANSLATE?.translate?.());
 }
 
 installExtendedNavigation();

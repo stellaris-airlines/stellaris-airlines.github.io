@@ -9,6 +9,7 @@ on:
       - "auth-session.js"
       - "auto-translate.js"
       - "site-navigation.js"
+      - "site-v3.js"
       - "site-content.js"
       - "digital-services.js"
       - "travel-service-core.js"
@@ -45,7 +46,7 @@ jobs:
       - name: Check JavaScript syntax
         shell: bash
         run: |
-          for file in app.js operations-model.js auth-session.js auto-translate.js site-navigation.js site-content.js digital-services.js travel-service-core.js service-tools.js site-experience-extension-v2.js service-careers-i18n.js legal-i18n.js firebase-config.js translations.js translations-extra.js; do
+          for file in app.js operations-model.js auth-session.js auto-translate.js site-navigation.js site-v3.js site-content.js digital-services.js travel-service-core.js service-tools.js site-experience-extension-v2.js service-careers-i18n.js legal-i18n.js firebase-config.js translations.js translations-extra.js; do
             node --input-type=module --check < "$file"
           done
           while IFS= read -r -d '' file; do
@@ -79,15 +80,20 @@ jobs:
           test -f legal-notices/index.html
           test -f auto-translate.js
           test -f site-navigation.js
+          test -f site-v3.js
+          test -f site-v3.css
+          test -f admin/admin-bilingual.js
           test -f book-your-journey/booking-stability.js
           grep -q "출발 예정 시각 24시간 전" check-in/index.html
           grep -q "data-operation-form" admin/index.html
-          grep -q "admin-careers.js" admin/index.html
+          grep -q "admin-bilingual.js?v=20260820-bilingual-v1" admin/index.html
           grep -q "data-notice-search" notices/index.html
+          grep -q "notices.js?v=20260820-notices-v6" notices/index.html
           grep -q "digital-services.js" auth-session.js
-          grep -q "auto-translate.js?v=20260820-auto-i18n-v2" auth-session.js
-          grep -q "site-navigation.js?v=20260820-nav-v2" auth-session.js
-          grep -q "auth-session.js?v=20260820-runtime-v2" app.js
-          grep -q "booking-stability.js?v=20260820-ticketing-v1" book-your-journey/index.html
-          grep -q "instagram.com/flystellaris" site-navigation.js
-          grep -q "footer-terms-social" site-navigation.js
+          grep -q "auto-translate.js?v=20260820-auto-i18n-v3" auth-session.js
+          grep -q "site-navigation.js?v=20260820-nav-v3" auth-session.js
+          grep -q "auth-session.js?v=20260820-runtime-v3" app.js
+          grep -q "instagram.com/flystellaris" site-v3.js
+          grep -q "api.open-meteo.com" site-v3.js
+          grep -q "STELLARIS_BILINGUAL_V1" admin/admin-bilingual.js
+          grep -q "STELLARIS_BILINGUAL_V1" notices/notices.js

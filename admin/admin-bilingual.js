@@ -38,8 +38,10 @@ form?.addEventListener('submit',async event=>{
   const titleKo=form.elements.title.value.trim(),bodyKo=form.elements.body.value.trim(),titleEn=form.elements.titleEn.value.trim(),bodyEn=form.elements.bodyEn.value.trim();
   if(!titleKo||!bodyKo){alert('한국어 글을 입력해 주세요.');return;}
   if(!titleEn||!bodyEn){alert('영어 글을 입력해 주세요.');return;}
+  const packedBody=packBody(bodyKo,titleEn,bodyEn);
+  if(packedBody.length>5000){alert('한국어와 영어 공지 본문을 합쳐 5,000자 이내로 입력해 주세요.');return;}
   const id=form.elements.noticeId.value.trim(),category=form.elements.category.value==='중요'?'중요':'일반',publishStart=fromLocalInput(form.elements.publishStart.value)||Timestamp.now(),publishEnd=fromLocalInput(form.elements.publishEnd.value);
-  const payload={category,author:form.elements.author.value.trim()||'STELLARIS AIRLINES',status:form.elements.status.value==='draft'?'draft':'published',publishStart,publishEnd:publishEnd||null,title:titleKo,body:packBody(bodyKo,titleEn,bodyEn),pinned:category==='중요',updatedAt:serverTimestamp()};
+  const payload={category,author:form.elements.author.value.trim()||'STELLARIS AIRLINES',status:form.elements.status.value==='draft'?'draft':'published',publishStart,publishEnd:publishEnd||null,title:titleKo,body:packedBody,pinned:category==='중요',updatedAt:serverTimestamp()};
   try{
     if(id)await updateDoc(doc(db,'notices',id),payload);else await addDoc(collection(db,'notices'),{...payload,views:0,publishedAt:serverTimestamp()});
     status(id?'공지사항을 수정했습니다.':'한국어/영어 공지사항을 등록했습니다.','success');

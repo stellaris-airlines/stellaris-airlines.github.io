@@ -4,32 +4,23 @@ const ATTRS=['placeholder','aria-label','title'];
 const textOriginal=new WeakMap();
 const textRendered=new WeakMap();
 const attrOriginal=new WeakMap();
+const attrRendered=new WeakMap();
 const translationCache=new Map();
 const translatorCache=new Map();
 let detectorPromise=null;
 let generation=0;
-let translating=false;
 let retryBound=false;
-
-// Legacy dictionary translators honour this flag. The new automatic layer does not,
-// so dynamic Firestore content and newly inserted DOM can be translated at runtime.
-document.body?.setAttribute('data-i18n-skip','');
+const nativeSupported='Translator' in self;
 
 function currentUiLanguage(){
-  try{
-    const stored=localStorage.getItem('stellaris-language');
-    if(SUPPORTED_UI_LANGS.includes(stored))return stored;
-  }catch(error){}
-  const html=document.documentElement.lang;
-  return SUPPORTED_UI_LANGS.includes(html)?html:'ko';
+  try{const stored=localStorage.getItem('stellaris-language');if(SUPPORTED_UI_LANGS.includes(stored))return stored;}catch(error){}
+  const html=document.documentElement.lang;return SUPPORTED_UI_LANGS.includes(html)?html:'ko';
 }
-function targetLanguage(uiLanguage=currentUiLanguage()){
-  return LANGUAGE_TARGETS[uiLanguage]||'ko';
-}
+function targetLanguage(uiLanguage=currentUiLanguage()){return LANGUAGE_TARGETS[uiLanguage]||'ko';}
 function shouldSkipElement(element){
   if(!element)return true;
   if(element.closest('script,style,noscript,code,pre,svg,canvas,[data-auto-translate-skip],.language-switcher'))return true;
-  if(element.closest('[data-auth-user],[data-complete-ref],[data-ticket-ref]'))return true;
+  if(element.closest('[data-auth-user],[data-complete-ref],[data-ticket-ref],[data-complete-passenger],[data-complete-flight],[data-complete-route],[data-complete-seat]'))return true;
   return false;
 }
 function meaningful(text){
@@ -55,155 +46,137 @@ async function getDetector(){
     try{
       const availability=await LanguageDetector.availability();
       if(availability==='unavailable')return null;
+      if(availability==='downloadable'&&!navigator.userActivation?.isActive){bindRetry();return null;}
       return await LanguageDetector.create();
     }catch(error){return null;}
   })();
-  return detectorPromise;
+  const detector=await detectorPromise;
+  if(!detector)detectorPromise=null;
+  return detector;
 }
 async function detectLanguage(text){
-  const fast=fastLanguage(text);
-  if(fast)return fast;
+  const fast=fastLanguage(text);if(fast)return fast;
   const detector=await getDetector();
   if(detector&&text.trim().length>=12){
-    try{
-      const results=await detector.detect(text);
-      const best=results?.[0];
-      if(best?.detectedLanguage&&Number(best.confidence||0)>=0.45)return String(best.detectedLanguage).split('-')[0];
-    }catch(error){}
+    try{const results=await detector.detect(text);const best=results?.[0];if(best?.detectedLanguage&&Number(best.confidence||0)>=0.45)return String(best.detectedLanguage).split('-')[0];}catch(error){}
   }
   return 'en';
 }
 async function getTranslator(source,target){
-  if(source===target)return null;
+  if(source===target||!nativeSupported)return null;
   const key=`${source}>${target}`;
   if(translatorCache.has(key))return translatorCache.get(key);
   const pending=(async()=>{
-    if(!('Translator' in self))return null;
     try{
       const availability=await Translator.availability({sourceLanguage:source,targetLanguage:target});
       if(availability==='unavailable')return null;
+      if(availability==='downloadable'&&!navigator.userActivation?.isActive){bindRetry();return null;}
       return await Translator.create({sourceLanguage:source,targetLanguage:target});
     }catch(error){return null;}
   })();
   translatorCache.set(key,pending);
-  return pending;
+  const result=await pending;
+  if(!result)translatorCache.delete(key);
+  return result;
 }
 async function translateString(text,target){
-  const raw=String(text||'');
-  const trimmed=raw.trim();
-  if(target==='ko'||!meaningful(trimmed))return raw;
+  const raw=String(text||''),trimmed=raw.trim();
+  if(target==='ko'||!meaningful(trimmed)||!nativeSupported)return raw;
   const cacheKey=`${target}\u0000${trimmed}`;
   if(translationCache.has(cacheKey))return raw.replace(trimmed,translationCache.get(cacheKey));
   const source=await detectLanguage(trimmed);
   if(source===target){translationCache.set(cacheKey,trimmed);return raw;}
   const translator=await getTranslator(source,target);
-  if(!translator){bindRetry();return raw;}
-  try{
-    const translated=String(await translator.translate(trimmed)||trimmed).trim();
-    translationCache.set(cacheKey,translated);
-    return raw.replace(trimmed,translated);
-  }catch(error){bindRetry();return raw;}
+  if(!translator)return raw;
+  try{const translated=String(await translator.translate(trimmed)||trimmed).trim();translationCache.set(cacheKey,translated);return raw.replace(trimmed,translated);}catch(error){bindRetry();return raw;}
 }
 function rememberText(node){
-  const lastRendered=textRendered.get(node);
-  if(!textOriginal.has(node)||node.nodeValue!==lastRendered){
-    textOriginal.set(node,node.nodeValue);
-  }
+  const rendered=textRendered.get(node);
+  if(!textOriginal.has(node)||node.nodeValue!==rendered)textOriginal.set(node,node.nodeValue);
   return textOriginal.get(node);
 }
 function rememberAttributes(element){
-  let saved=attrOriginal.get(element);
-  if(!saved){saved={};attrOriginal.set(element,saved);}
+  let original=attrOriginal.get(element);if(!original){original={};attrOriginal.set(element,original);}
+  let rendered=attrRendered.get(element);if(!rendered){rendered={};attrRendered.set(element,rendered);}
   for(const attr of ATTRS){
     if(!element.hasAttribute(attr))continue;
     const current=element.getAttribute(attr)||'';
-    if(saved[attr]===undefined||current!==element.dataset[`autoTranslated${attr.replace(/-([a-z])/g,(_,c)=>c.toUpperCase())}`])saved[attr]=current;
+    if(original[attr]===undefined||current!==rendered[attr])original[attr]=current;
   }
-  return saved;
+  return original;
 }
 async function translateTextNode(node,target,token){
   if(token!==generation||!node?.parentElement||shouldSkipElement(node.parentElement))return;
   const original=rememberText(node);
-  if(target==='ko'){
-    if(node.nodeValue!==original){translating=true;node.nodeValue=original;translating=false;}
-    textRendered.set(node,original);
-    return;
-  }
+  if(target==='ko'){textRendered.set(node,node.nodeValue);return;}
   const translated=await translateString(original,target);
   if(token!==generation||!node.isConnected)return;
-  translating=true;node.nodeValue=translated;translating=false;
+  if(node.nodeValue!==translated)node.nodeValue=translated;
   textRendered.set(node,translated);
 }
 async function translateAttributes(element,target,token){
   if(token!==generation||!element?.isConnected||shouldSkipElement(element))return;
-  const saved=rememberAttributes(element);
+  const saved=rememberAttributes(element),rendered=attrRendered.get(element)||{};
   for(const [attr,original] of Object.entries(saved)){
     const next=target==='ko'?original:await translateString(original,target);
     if(token!==generation||!element.isConnected)return;
-    translating=true;element.setAttribute(attr,next);translating=false;
-    const key=`autoTranslated${attr.replace(/-([a-z])/g,(_,c)=>c.toUpperCase())}`;
-    element.dataset[key]=next;
+    if(element.getAttribute(attr)!==next)element.setAttribute(attr,next);
+    rendered[attr]=next;
   }
+  attrRendered.set(element,rendered);
 }
-async function translateSubtree(root=document.body,uiLanguage=currentUiLanguage()){
-  if(!root)return;
-  const token=++generation;
+async function runRoot(root,uiLanguage,token){
+  if(!root||!nativeSupported||token!==generation)return;
   const target=targetLanguage(uiLanguage);
-  document.documentElement.lang=uiLanguage;
   const textNodes=[];
-  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode(node){
-    return node.nodeValue?.trim()&&!shouldSkipElement(node.parentElement)?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_REJECT;
-  }});
-  let node;while((node=walker.nextNode()))textNodes.push(node);
+  if(root.nodeType===Node.TEXT_NODE){if(root.nodeValue?.trim()&&!shouldSkipElement(root.parentElement))textNodes.push(root);}
+  else{
+    const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode(node){return node.nodeValue?.trim()&&!shouldSkipElement(node.parentElement)?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_REJECT;}});
+    let node;while((node=walker.nextNode()))textNodes.push(node);
+  }
   const attrNodes=[];
-  if(root.nodeType===1&&ATTRS.some(attr=>root.hasAttribute?.(attr)))attrNodes.push(root);
-  root.querySelectorAll?.('[placeholder],[aria-label],[title]').forEach(element=>{if(!shouldSkipElement(element))attrNodes.push(element);});
-  for(let i=0;i<textNodes.length;i+=8){
-    await Promise.all(textNodes.slice(i,i+8).map(item=>translateTextNode(item,target,token)));
-    if(token!==generation)return;
+  if(root.nodeType===Node.ELEMENT_NODE){
+    if(ATTRS.some(attr=>root.hasAttribute?.(attr))&&!shouldSkipElement(root))attrNodes.push(root);
+    root.querySelectorAll?.('[placeholder],[aria-label],[title]').forEach(element=>{if(!shouldSkipElement(element))attrNodes.push(element);});
   }
-  for(let i=0;i<attrNodes.length;i+=8){
-    await Promise.all(attrNodes.slice(i,i+8).map(item=>translateAttributes(item,target,token)));
-    if(token!==generation)return;
-  }
+  for(let i=0;i<textNodes.length;i+=8){await Promise.all(textNodes.slice(i,i+8).map(item=>translateTextNode(item,target,token)));if(token!==generation)return;}
+  for(let i=0;i<attrNodes.length;i+=8){await Promise.all(attrNodes.slice(i,i+8).map(item=>translateAttributes(item,target,token)));if(token!==generation)return;}
+}
+async function translatePage(uiLanguage=currentUiLanguage()){
+  if(!nativeSupported)return false;
+  const token=++generation;document.documentElement.lang=uiLanguage;
+  await runRoot(document.body,uiLanguage,token);return token===generation;
 }
 function bindRetry(){
-  if(retryBound)return;
-  retryBound=true;
+  if(retryBound||!nativeSupported)return;retryBound=true;
   const retry=()=>{
-    retryBound=false;
-    document.removeEventListener('click',retry,true);
-    document.removeEventListener('keydown',retry,true);
-    void translateSubtree(document.body,currentUiLanguage());
+    retryBound=false;document.removeEventListener('click',retry,true);document.removeEventListener('keydown',retry,true);
+    detectorPromise=null;translatorCache.clear();void translatePage(currentUiLanguage());
   };
-  document.addEventListener('click',retry,true,{once:true});
-  document.addEventListener('keydown',retry,true,{once:true});
+  document.addEventListener('click',retry,true,{once:true});document.addEventListener('keydown',retry,true,{once:true});
 }
 const observer=new MutationObserver(records=>{
-  if(translating)return;
-  const language=currentUiLanguage();
+  if(!nativeSupported)return;
+  const language=currentUiLanguage(),token=generation;
   for(const record of records){
     if(record.type==='characterData'){
-      const node=record.target;
-      if(textRendered.get(node)!==node.nodeValue)textOriginal.set(node,node.nodeValue);
-      void translateTextNode(node,targetLanguage(language),generation);
-      continue;
+      const node=record.target;if(textRendered.get(node)!==node.nodeValue)textOriginal.set(node,node.nodeValue);
+      void translateTextNode(node,targetLanguage(language),token);continue;
     }
-    for(const added of record.addedNodes){
-      if(added.nodeType===Node.TEXT_NODE){
-        textOriginal.set(added,added.nodeValue);
-        void translateTextNode(added,targetLanguage(language),generation);
-      }else if(added.nodeType===Node.ELEMENT_NODE){
-        void translateSubtree(added,language);
+    if(record.type==='attributes'){
+      const element=record.target,rendered=attrRendered.get(element)||{};
+      if(rendered[record.attributeName]!==element.getAttribute(record.attributeName)){
+        const original=attrOriginal.get(element)||{};original[record.attributeName]=element.getAttribute(record.attributeName)||'';attrOriginal.set(element,original);
       }
+      void translateAttributes(element,targetLanguage(language),token);continue;
     }
+    for(const added of record.addedNodes)void runRoot(added,language,token);
   }
 });
-if(document.body)observer.observe(document.body,{childList:true,subtree:true,characterData:true});
-
+if(document.body&&nativeSupported)observer.observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:ATTRS});
 window.addEventListener('stellaris:languagechange',event=>{
   const language=SUPPORTED_UI_LANGS.includes(event.detail?.language)?event.detail.language:currentUiLanguage();
-  void translateSubtree(document.body,language);
+  void translatePage(language);
 });
-window.STELLARIS_AUTO_TRANSLATE={translate:()=>translateSubtree(document.body,currentUiLanguage()),currentLanguage:currentUiLanguage};
-queueMicrotask(()=>void translateSubtree(document.body,currentUiLanguage()));
+window.STELLARIS_AUTO_TRANSLATE={translate:()=>translatePage(currentUiLanguage()),currentLanguage:currentUiLanguage,supported:nativeSupported};
+if(nativeSupported)queueMicrotask(()=>void translatePage(currentUiLanguage()));

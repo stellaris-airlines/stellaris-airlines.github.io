@@ -1,7 +1,7 @@
 import { auth, db } from '../firebase-config.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
 import { doc, getDoc, serverTimestamp, setDoc, Timestamp, updateDoc } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
-import { createRichEditor, sanitizeRichHTML } from './rich-editor.js?v=20260820-rich-v1';
+import { createRichEditor, sanitizeRichHTML } from './rich-editor.js?v=20260820-rich-v2';
 import { uploadAdminImage } from './admin-media.js?v=20260820-media-v1';
 
 const ADMIN_EMAILS=new Set(['stellarisairlines@gmail.com','stellaris.web.dev@gmail.com']);

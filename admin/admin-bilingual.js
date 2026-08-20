@@ -2,7 +2,7 @@ import { auth, db } from '../firebase-config.js';
 import { addDoc, collection, doc, getDoc, serverTimestamp, Timestamp, updateDoc } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 import { createRichEditor, sanitizeRichHTML } from './rich-editor.js?v=20260820-rich-v1';
 import { uploadAdminImage } from './admin-media.js?v=20260820-media-v1';
-import './admin-popup.js?v=20260820-popup-v1';
+import './admin-popup.js?v=20260820-popup-v2';
 
 const ADMIN_EMAILS=new Set(['stellarisairlines@gmail.com','stellaris.web.dev@gmail.com']);
 const MARK='[[STELLARIS_BILINGUAL_V1]]';
@@ -24,7 +24,7 @@ function installFields(){
   block.innerHTML='<strong>English notice</strong><label>English title<input type="text" name="titleEn" maxlength="120" autocomplete="off"></label><label>English body<textarea name="bodyEn" rows="7"></textarea></label>';
   actions?.before(block);
   const title=form.elements.title?.closest('label'),body=form.elements.body?.closest('label');if(title&&title.firstChild)title.firstChild.textContent='한국어 제목';if(body&&body.firstChild)body.firstChild.textContent='한국어 본문';
-  form.elements.body.removeAttribute('maxlength');form.elements.bodyEn.removeAttribute('maxlength');
+  form.elements.body.removeAttribute('maxlength');form.elements.body.removeAttribute('required');form.elements.bodyEn.removeAttribute('maxlength');form.elements.bodyEn.removeAttribute('required');
   koEditor=createRichEditor(form.elements.body,{placeholder:'한국어 본문을 입력하세요.',uploadImage:file=>uploadAdminImage(file,'notices/ko')});
   enEditor=createRichEditor(form.elements.bodyEn,{placeholder:'Enter the English notice body.',uploadImage:file=>uploadAdminImage(file,'notices/en')});
 }

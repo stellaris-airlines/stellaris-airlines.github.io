@@ -10,6 +10,7 @@ on:
       - "auto-translate.js"
       - "site-navigation.js"
       - "site-v3.js"
+      - "site-v3.css"
       - "site-content.js"
       - "digital-services.js"
       - "travel-service-core.js"
@@ -83,10 +84,12 @@ jobs:
           test -f site-v3.js
           test -f site-v3.css
           test -f admin/admin-bilingual.js
+          test -f admin/admin-home-bilingual.js
           test -f book-your-journey/booking-stability.js
           grep -q "출발 예정 시각 24시간 전" check-in/index.html
           grep -q "data-operation-form" admin/index.html
-          grep -q "admin-bilingual.js?v=20260820-bilingual-v1" admin/index.html
+          grep -q "admin-home-bilingual.js?v=20260820-home-bilingual-v1" admin/index.html
+          grep -q "admin-bilingual.js?v=20260820-bilingual-v2" admin/index.html
           grep -q "data-notice-search" notices/index.html
           grep -q "notices.js?v=20260820-notices-v6" notices/index.html
           grep -q "digital-services.js" auth-session.js
@@ -97,3 +100,5 @@ jobs:
           grep -q "api.open-meteo.com" site-v3.js
           grep -q "STELLARIS_BILINGUAL_V1" admin/admin-bilingual.js
           grep -q "STELLARIS_BILINGUAL_V1" notices/notices.js
+          grep -q "\[\[EN\]\]" admin/admin-home-bilingual.js
+          grep -q "\[\[EN\]\]" site-content.js

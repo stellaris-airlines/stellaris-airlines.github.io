@@ -1,8 +1,8 @@
 import { auth } from './firebase-config.js';
-import './auto-translate.js?v=20260820-auto-i18n-v1';
+import './auto-translate.js?v=20260820-auto-i18n-v2';
 import './site-content.js?v=20260817-digital-v2';
 import './digital-services.js?v=20260817-digital-v2';
-import './site-navigation.js?v=20260820-nav-v1';
+import './site-navigation.js?v=20260820-nav-v2';
 import {
   browserLocalPersistence,
   onAuthStateChanged,
@@ -140,6 +140,7 @@ if(headerHost){
 window.addEventListener('stellaris:languagechange', (event) => {
   translateAccountNavigation(event.detail?.language || currentLanguage());
   queueMicrotask(installExtendedNavigation);
+  queueMicrotask(()=>window.STELLARIS_AUTO_TRANSLATE?.translate?.());
 });
 
 await setPersistence(auth, browserLocalPersistence);

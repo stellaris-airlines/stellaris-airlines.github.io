@@ -5,7 +5,7 @@ import { createRichEditor, sanitizeRichHTML } from './rich-editor.js?v=20260820-
 import { uploadAdminImage } from './admin-media.js?v=20260820-media-v1';
 
 const ADMIN_EMAILS=new Set(['stellarisairlines@gmail.com','stellaris.web.dev@gmail.com']);
-const DOC_ID='__home_popup__',MARK='[[STELLARIS_HOME_POPUP_V1]]';
+const DOC_ID='home_popup_config',MARK='[[STELLARIS_HOME_POPUP_V1]]';
 const statusBox=document.querySelector('[data-admin-status]');
 let form=null,koEditor=null,enEditor=null,currentDoc=null;
 const PAGES=[

@@ -175,8 +175,11 @@ const observer=new MutationObserver(records=>{
 });
 if(document.body&&nativeSupported)observer.observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:ATTRS});
 window.addEventListener('stellaris:languagechange',event=>{
+  if(!nativeSupported)return;
   const language=SUPPORTED_UI_LANGS.includes(event.detail?.language)?event.detail.language:currentUiLanguage();
   void translatePage(language);
 });
-window.STELLARIS_AUTO_TRANSLATE={translate:()=>translatePage(currentUiLanguage()),currentLanguage:currentUiLanguage,supported:nativeSupported};
-if(nativeSupported)queueMicrotask(()=>void translatePage(currentUiLanguage()));
+if(nativeSupported){
+  window.STELLARIS_AUTO_TRANSLATE={translate:()=>translatePage(currentUiLanguage()),currentLanguage:currentUiLanguage,supported:true};
+  queueMicrotask(()=>void translatePage(currentUiLanguage()));
+}

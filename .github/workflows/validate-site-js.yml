@@ -85,8 +85,9 @@ jobs:
           grep -q "admin-careers.js" admin/index.html
           grep -q "data-notice-search" notices/index.html
           grep -q "digital-services.js" auth-session.js
-          grep -q "auto-translate.js" auth-session.js
-          grep -q "site-navigation.js" auth-session.js
-          grep -q "auth-session.js?v=20260820-runtime-v1" app.js
+          grep -q "auto-translate.js?v=20260820-auto-i18n-v2" auth-session.js
+          grep -q "site-navigation.js?v=20260820-nav-v2" auth-session.js
+          grep -q "auth-session.js?v=20260820-runtime-v2" app.js
           grep -q "booking-stability.js?v=20260820-ticketing-v1" book-your-journey/index.html
           grep -q "instagram.com/flystellaris" site-navigation.js
+          grep -q "footer-terms-social" site-navigation.js

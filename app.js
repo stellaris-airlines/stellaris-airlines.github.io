@@ -69,7 +69,7 @@ installCommonChrome();
 
 const authSessionScript=document.createElement('script');
 authSessionScript.type='module';
-authSessionScript.src=A('auth-session.js?v=20260820-runtime-v1');
+authSessionScript.src=A('auth-session.js?v=20260820-runtime-v2');
 document.head.appendChild(authSessionScript);
 
 document.querySelectorAll('.book-link').forEach(el=>el.textContent='항공권 예약하기');
@@ -208,7 +208,7 @@ let savedLanguage='ko';
 try{savedLanguage=localStorage.getItem('stellaris-language')||'ko';}catch(e){}
 if(!languageCodes.includes(savedLanguage))savedLanguage='ko';
 
-const I18N_VERSION='20260820-auto-i18n-v1';
+const I18N_VERSION='20260820-auto-i18n-v2';
 const finishI18n=()=>{
   const baseRows=window.STELLARIS_I18N?.rows||[];
   const extraRows=window.STELLARIS_EXTRA_I18N?.rows||[];

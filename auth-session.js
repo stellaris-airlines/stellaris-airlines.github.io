@@ -1,8 +1,8 @@
 import { auth } from './firebase-config.js';
-import './auto-translate.js?v=20260820-auto-i18n-v2';
-import './site-content.js?v=20260817-digital-v2';
+import './auto-translate.js?v=20260820-auto-i18n-v3';
+import './site-content.js?v=20260820-site-content-v3';
 import './digital-services.js?v=20260817-digital-v2';
-import './site-navigation.js?v=20260820-nav-v2';
+import './site-navigation.js?v=20260820-nav-v3';
 import {
   browserLocalPersistence,
   onAuthStateChanged,
@@ -17,12 +17,7 @@ const ADMIN_EMAILS = new Set(['stellarisairlines@gmail.com','stellaris.web.dev@g
 
 const accountLabels = {
   ko: { starMiles: '내 Star Miles 보기', logout: '로그아웃', notices:'공지사항' },
-  'en-US': { starMiles: 'View my Star Miles', logout: 'Log out', notices:'Notices' },
-  'en-GB': { starMiles: 'View my Star Miles', logout: 'Log out', notices:'Notices' },
-  'zh-CN': { starMiles: '查看我的 Star Miles', logout: '退出登录', notices:'公告' },
-  ja: { starMiles: 'Star Milesを確認', logout: 'ログアウト', notices:'お知らせ' },
-  es: { starMiles: 'Ver mis Star Miles', logout: 'Cerrar sesión', notices:'Avisos' },
-  fr: { starMiles: 'Voir mes Star Miles', logout: 'Se déconnecter', notices:'Annonces' }
+  'en-US': { starMiles: 'View my Star Miles', logout: 'Log out', notices:'Notices' }
 };
 
 function currentLanguage() {
@@ -96,8 +91,6 @@ function installExtendedNavigation() {
   addLinkOnce(services,boardingPassHref,'모바일 탑승권');
   addLinkOnce(services,myPageHref,'My Page');
   addLinkOnce(support,noticesHref,'공지사항');
-  const copyright=document.querySelector('.footer-bottom>span');
-  if(copyright)copyright.textContent='ⓒ 2026 STELLARIS AIRLINES. All rights reserved.';
   installNoticeShortcut();
 }
 function installAdminLink(user){
@@ -105,7 +98,7 @@ function installAdminLink(user){
   if(!user||!ADMIN_EMAILS.has(String(user.email||'').toLowerCase()))return;
   const logout=[...logoutElements()][0];
   if(!logout)return;
-  const link=document.createElement('a');link.href=rootHref('admin/');link.textContent='관리자';link.dataset.adminSessionLink='true';
+  const link=document.createElement('a');link.href=rootHref('admin/');link.textContent=currentLanguage()==='en-US'?'Admin':'관리자';link.dataset.adminSessionLink='true';
   logout.before(link);
 }
 

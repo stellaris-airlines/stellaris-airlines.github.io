@@ -9,14 +9,8 @@ const note=document.querySelector('[data-demo-payment-note]');
 const approveButton=document.querySelector('[data-payment-sim-approve]');
 const declineButton=document.querySelector('[data-payment-sim-decline]');
 const closeButtons=[...document.querySelectorAll('[data-payment-sim-close]')];
-
-const COPY={
-  ko:{title:'결제 확인',eyebrow:'DEMO CHECKOUT',warning:'테스트용 결제 확인 단계입니다. 실제 결제는 발생하지 않습니다.',note:'결제 확인 버튼을 누르면 약 1초 후 예약 완료 화면으로 이동합니다.',method:'확인 방식',card:'Demo Card',bank:'Demo Bank Transfer',wallet:'Demo Wallet',approve:'결제 확인',processing:'결제 처리중…',decline:'취소',login:'발권하려면 먼저 로그인해 주세요.',summary:'예약 확인',secure:'실제 카드번호·CVC·계좌번호는 입력하거나 저장하지 않습니다.',close:'닫기'},
-  'en-US':{title:'Confirm payment',eyebrow:'DEMO CHECKOUT',warning:'This is a demo confirmation step. No real payment is made.',note:'Confirm and the booking-complete screen will open automatically after about one second.',method:'Confirmation method',card:'Demo Card',bank:'Demo Bank Transfer',wallet:'Demo Wallet',approve:'Confirm',processing:'Processing…',decline:'Cancel',login:'Sign in before ticketing.',summary:'Booking summary',secure:'No real card, CVC or bank-account details are entered or stored.',close:'Close'}
-};
-COPY['en-GB']=COPY['en-US'];COPY['zh-CN']=COPY['en-US'];COPY.ja=COPY['en-US'];COPY.es=COPY['en-US'];COPY.fr=COPY['en-US'];
-const lang=()=>{const value=localStorage.getItem('stellaris-language')||'ko';return COPY[value]?value:'ko';};
-const t=key=>COPY[lang()][key];
+const COPY={title:'결제 확인',eyebrow:'DEMO CHECKOUT',warning:'테스트용 결제 확인 단계입니다. 실제 결제는 발생하지 않습니다.',note:'결제 확인 버튼을 누르면 약 1초 후 예약 완료 화면으로 이동합니다.',method:'확인 방식',card:'Demo Card',bank:'Demo Bank Transfer',wallet:'Demo Wallet',approve:'결제 확인',processing:'결제 처리중…',decline:'취소',login:'발권하려면 먼저 로그인해 주세요.',summary:'예약 확인',secure:'실제 카드번호·CVC·계좌번호는 입력하거나 저장하지 않습니다.',close:'닫기'};
+const t=key=>COPY[key]||key;
 let processing=false;
 
 function syncLanguage(){
@@ -37,6 +31,7 @@ function syncLanguage(){
       if(option.value==='demo-wallet')option.textContent=t('wallet');
     });
   }
+  queueMicrotask(()=>window.STELLARIS_AUTO_TRANSLATE?.translate?.());
 }
 function setProcessing(value){
   processing=value;
@@ -52,6 +47,7 @@ function openPayment(){
   setProcessing(false);
   modal.hidden=false;
   document.body.classList.add('payment-sim-open');
+  queueMicrotask(()=>window.STELLARIS_AUTO_TRANSLATE?.translate?.());
 }
 function closePayment(force=false){
   if(processing&&!force)return;
@@ -79,16 +75,14 @@ function passengerCounts(){
   };
 }
 function manifest(){
-  return [...document.querySelectorAll('.passenger-info-card')].map((card,index)=>({
-    key:card.dataset.passengerKey||String(index+1),
-    type:card.dataset.passengerType||'adult',
-    surname:card.querySelector('[name="surname"]')?.value?.trim()||'',
-    givenName:card.querySelector('[name="givenName"]')?.value?.trim()||'',
-    birthDate:card.querySelector('[name="birthDate"]')?.value||'',
-    gender:card.querySelector('[name="gender"]')?.value||'',
-    email:card.querySelector('[name="email"]')?.value?.trim()||'',
-    phone:card.querySelector('[name="phone"]')?.value?.trim()||''
+  const live=[...document.querySelectorAll('.passenger-info-card')].map((card,index)=>({
+    key:card.dataset.passengerKey||String(index+1),type:card.dataset.passengerType||'adult',
+    surname:card.querySelector('[name="surname"]')?.value?.trim()||'',givenName:card.querySelector('[name="givenName"]')?.value?.trim()||'',
+    birthDate:card.querySelector('[name="birthDate"]')?.value||'',gender:card.querySelector('[name="gender"]')?.value||'',
+    email:card.querySelector('[name="email"]')?.value?.trim()||'',phone:card.querySelector('[name="phone"]')?.value?.trim()||''
   }));
+  if(live.length)return live;
+  try{return JSON.parse(localStorage.getItem('stellaris-passenger-manifest-v1')||'[]');}catch(error){return [];}
 }
 function passengerName(item){return [item?.surname,item?.givenName].filter(Boolean).join(' ').trim();}
 function itineraryParts(){
@@ -105,17 +99,10 @@ function segmentFromPart(part,index){
   const round=!document.getElementById('returnField')?.hidden;
   const origin=routeMatch?.[1]||(index===0?from:to);
   const destination=routeMatch?.[2]||(index===0?to:from);
-  return {
-    direction:index===0?'outbound':'inbound',
-    flightNumber:flightMatch?.[1]||'XS000',
-    origin,destination,
+  return {direction:index===0?'outbound':'inbound',flightNumber:flightMatch?.[1]||'XS000',origin,destination,
     date:index===0?(document.getElementById('departureDate')?.value||''):(round?(document.getElementById('returnDate')?.value||''):(document.getElementById('departureDate')?.value||'')),
-    departure:'00:00',arrival:'00:00',aircraft:'',
-    cabin:document.getElementById('cabinClass')?.value||'economy',
-    fareFamily:'',fareName:bits[1]||'',fare:0,
-    seats,seatDetails:seats.map(id=>({id,type:'standard',fee:0})),
-    passengerName:'',passengerCounts:passengerCounts()
-  };
+    departure:'00:00',arrival:'00:00',aircraft:'',cabin:document.getElementById('cabinClass')?.value||'economy',fareFamily:'',fareName:bits[1]||'',fare:0,
+    seats,seatDetails:seats.map(id=>({id,type:'standard',fee:0})),passengerName:'',passengerCounts:passengerCounts()};
 }
 function bookingSnapshot(reference,payment){
   const user=auth.currentUser;
@@ -124,38 +111,24 @@ function bookingSnapshot(reference,payment){
   const parts=itineraryParts();
   const segmentList=(parts.length?parts:['']).map((part,index)=>segmentFromPart(part,index)).map(segment=>({...segment,passengerName:passengerName(lead)}));
   const selectedCabin=document.getElementById('cabinClass')?.value||'economy';
-  return {
-    bookingRef:reference,userId:user.uid,email:user.email||'',
-    origin:segmentList[0]?.origin||document.getElementById('fromInput')?.value||'',
-    destination:segmentList.at(-1)?.destination||document.getElementById('toInput')?.value||'',
-    flightNumber:segmentList[0]?.flightNumber||'XS000',segments:segmentList,
-    passengers:Math.max(1,passengerList.length||Number(document.getElementById('passengerCount')?.value||1)),
-    cabin:selectedCabin==='economy'?'economy':'premium',
-    totalFare:integerFromText(document.querySelector('[data-booking-summary] p:nth-of-type(2)')?.textContent||''),
-    currency:'KRW',
-    milesEarned:integerFromText(document.querySelector('.booking-miles-summary')?.textContent||''),
-    status:'ticketed',
-    passengerManifest:passengerList,
-    passengerCount:Math.max(1,passengerList.length||Number(document.getElementById('passengerCount')?.value||1)),
-    leadPassengerName:passengerName(lead),
-    contactEmail:lead.email||user.email||'',
-    contactPhone:lead.phone||'',
-    paymentStatus:'paid-demo',paymentMethod:payment.method,paymentMode:'simulation',paymentReference:payment.reference,
-    createdAt:new Date().toISOString()
-  };
+  return {bookingRef:reference,userId:user.uid,email:user.email||'',origin:segmentList[0]?.origin||document.getElementById('fromInput')?.value||'',
+    destination:segmentList.at(-1)?.destination||document.getElementById('toInput')?.value||'',flightNumber:segmentList[0]?.flightNumber||'XS000',segments:segmentList,
+    passengers:Math.max(1,passengerList.length||Number(document.getElementById('passengerCount')?.value||1)),cabin:selectedCabin,
+    totalFare:integerFromText(document.querySelector('[data-booking-summary] p:nth-of-type(2)')?.textContent||''),currency:'KRW',
+    milesEarned:integerFromText(document.querySelector('.booking-miles-summary')?.textContent||''),status:'ticketed',passengerManifest:passengerList,
+    passengerCount:Math.max(1,passengerList.length||Number(document.getElementById('passengerCount')?.value||1)),leadPassengerName:passengerName(lead),
+    contactEmail:lead.email||user.email||'',contactPhone:lead.phone||'',paymentStatus:'paid-demo',paymentMethod:payment.method,paymentMode:'simulation',
+    paymentReference:payment.reference,createdAt:new Date().toISOString()};
 }
 function saveBooking(data){
   try{
     const list=JSON.parse(localStorage.getItem('stellaris-bookings-v1')||'[]');
     const filtered=Array.isArray(list)?list.filter(item=>item.bookingRef!==data.bookingRef):[];
-    filtered.unshift(data);
-    localStorage.setItem('stellaris-bookings-v1',JSON.stringify(filtered.slice(0,50)));
+    filtered.unshift(data);localStorage.setItem('stellaris-bookings-v1',JSON.stringify(filtered.slice(0,50)));
   }catch(error){console.warn('Local booking save failed.',error);}
   try{sessionStorage.setItem('stellaris-pending-booking',JSON.stringify(data));}catch(error){}
 }
 
-// Passenger-info.js validates the first click, marks passengerManifestReady, then re-clicks.
-// This capture handler owns only that validated second click and opens the simple checkout.
 document.addEventListener('click',event=>{
   const button=event.target.closest('[data-issue-ticket]');
   if(!button)return;
@@ -163,8 +136,7 @@ document.addEventListener('click',event=>{
   if(passengerSection&&!passengerSection.hidden&&button.dataset.passengerManifestReady!=='true')return;
   const confirm=document.querySelector('[data-booking-confirm]');
   if(confirm?.hidden)return;
-  event.preventDefault();
-  event.stopImmediatePropagation();
+  event.preventDefault();event.stopImmediatePropagation();
   if(!auth.currentUser){openPayment();showError(t('login'));return;}
   openPayment();
 },true);
@@ -178,25 +150,20 @@ approveButton?.addEventListener('click',()=>{
   if(!auth.currentUser){showError(t('login'));return;}
   setProcessing(true);
   if(errorBox){errorBox.hidden=true;errorBox.textContent='';}
-
   const payment={status:'paid-demo',method:method?.value||'demo-card',reference:demoReference()};
   const reference=bookingReference();
   let data;
   try{
-    data=bookingSnapshot(reference,payment);
-    saveBooking(data);
-    localStorage.setItem('stellaris-demo-payment-v1',JSON.stringify(payment));
+    data=bookingSnapshot(reference,payment);saveBooking(data);localStorage.setItem('stellaris-demo-payment-v1',JSON.stringify(payment));
   }catch(error){
     console.error('Checkout snapshot failed.',error);
-    data={bookingRef:reference,userId:auth.currentUser.uid,email:auth.currentUser.email||'',segments:[],passengers:1,cabin:'economy',totalFare:0,currency:'KRW',milesEarned:0,status:'ticketed',passengerManifest:[],paymentStatus:'paid-demo',paymentMethod:payment.method,paymentMode:'simulation',paymentReference:payment.reference,createdAt:new Date().toISOString()};
+    data={bookingRef:reference,userId:auth.currentUser.uid,email:auth.currentUser.email||'',segments:[{flightNumber:'XS000',origin:'',destination:'',date:'',cabin:'economy',seats:[]}],passengers:1,cabin:'economy',totalFare:0,currency:'KRW',milesEarned:0,status:'ticketed',passengerManifest:[],paymentStatus:'paid-demo',paymentMethod:payment.method,paymentMode:'simulation',paymentReference:payment.reference,createdAt:new Date().toISOString()};
     saveBooking(data);
   }
-
+  const destination=new URL('../booking-complete/',import.meta.url);destination.searchParams.set('booking',reference);
   window.setTimeout(()=>{
-    setProcessing(false);
-    closePayment(true);
-    window.location.assign(`../booking-complete/?booking=${encodeURIComponent(reference)}`);
-  },1000);
+    setProcessing(false);closePayment(true);window.location.replace(destination.href);
+  },900);
 });
 
 window.addEventListener('stellaris:languagechange',syncLanguage);

@@ -7,6 +7,8 @@ on:
       - "app.js"
       - "operations-model.js"
       - "auth-session.js"
+      - "auto-translate.js"
+      - "site-navigation.js"
       - "site-content.js"
       - "digital-services.js"
       - "travel-service-core.js"
@@ -19,6 +21,7 @@ on:
       - "signup/**/*.js"
       - "flight-information/**/*.js"
       - "book-your-journey/**/*.js"
+      - "booking-complete/**/*.js"
       - "find-your-reservations/**/*.js"
       - "view-my-starmiles/**/*.js"
       - "admin/**/*.js"
@@ -42,18 +45,19 @@ jobs:
       - name: Check JavaScript syntax
         shell: bash
         run: |
-          for file in app.js operations-model.js auth-session.js site-content.js digital-services.js travel-service-core.js service-tools.js site-experience-extension-v2.js service-careers-i18n.js legal-i18n.js firebase-config.js translations.js translations-extra.js; do
+          for file in app.js operations-model.js auth-session.js auto-translate.js site-navigation.js site-content.js digital-services.js travel-service-core.js service-tools.js site-experience-extension-v2.js service-careers-i18n.js legal-i18n.js firebase-config.js translations.js translations-extra.js; do
             node --input-type=module --check < "$file"
           done
           while IFS= read -r -d '' file; do
             node --input-type=module --check < "$file"
-          done < <(find login signup flight-information book-your-journey find-your-reservations view-my-starmiles admin notices check-in boarding-pass booking-confirmation my-page careers -type f -name '*.js' -print0)
+          done < <(find login signup flight-information book-your-journey booking-complete find-your-reservations view-my-starmiles admin notices check-in boarding-pass booking-confirmation my-page careers -type f -name '*.js' -print0)
       - name: Digital service smoke checks
         shell: bash
         run: |
           test -f check-in/index.html
           test -f boarding-pass/index.html
           test -f booking-confirmation/index.html
+          test -f booking-complete/index.html
           test -f my-page/index.html
           test -f services/index.html
           test -f baggage/index.html
@@ -73,12 +77,16 @@ jobs:
           test -f international-passenger-conditions/index.html
           test -f international-cargo-conditions/index.html
           test -f legal-notices/index.html
+          test -f auto-translate.js
+          test -f site-navigation.js
+          test -f book-your-journey/booking-stability.js
           grep -q "출발 예정 시각 24시간 전" check-in/index.html
           grep -q "data-operation-form" admin/index.html
           grep -q "admin-careers.js" admin/index.html
           grep -q "data-notice-search" notices/index.html
           grep -q "digital-services.js" auth-session.js
-          grep -q "site-experience-extension-v2.js" auth-session.js
-          grep -q "service-careers-i18n.js" auth-session.js
-          grep -q "legal-i18n.js" auth-session.js
-          grep -q "auth-session.js?v=20260817-nav-i18n-v4" app.js
+          grep -q "auto-translate.js" auth-session.js
+          grep -q "site-navigation.js" auth-session.js
+          grep -q "auth-session.js?v=20260820-runtime-v1" app.js
+          grep -q "booking-stability.js?v=20260820-ticketing-v1" book-your-journey/index.html
+          grep -q "instagram.com/flystellaris" site-navigation.js

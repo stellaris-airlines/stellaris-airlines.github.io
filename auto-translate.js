@@ -4,6 +4,7 @@ const sourceText=new WeakMap(),renderedText=new WeakMap(),sourceAttrs=new WeakMa
 const cache=new Map(),translatorCache=new Map();
 let generation=0,retryBound=false;
 const nativeSupported='Translator' in self;
+const adminEditorPage=document.body?.dataset?.page==='admin'||document.body?.hasAttribute?.('data-auto-translate-skip');
 
 function lang(){try{return localStorage.getItem('stellaris-language')==='en-US'?'en-US':'ko';}catch(error){return 'ko';}}
 function skip(el){return !el||Boolean(el.closest('script,style,noscript,code,pre,svg,canvas,[data-auto-translate-skip],.language-switcher,[data-auth-user],[data-complete-ref],[data-ticket-ref],[data-complete-passenger],[data-complete-flight],[data-complete-route],[data-complete-seat]'));}
@@ -18,10 +19,30 @@ function rememberText(node){const current=String(node.nodeValue||''),rendered=re
 function rememberAttrs(el){let source=sourceAttrs.get(el);if(!source){source={};sourceAttrs.set(el,source);}let rendered=renderedAttrs.get(el);if(!rendered){rendered={};renderedAttrs.set(el,rendered);}for(const attr of ATTRS){if(!el.hasAttribute(attr))continue;const current=el.getAttribute(attr)||'';if(source[attr]===undefined)source[attr]=/[가-힣]/.test(current)?current:recoverSource(current);else if(current!==rendered[attr]){if(/[가-힣]/.test(current))source[attr]=current;else{const recovered=recoverSource(current);if(recovered!==current)source[attr]=recovered;}}}return source;}
 async function translateNode(node,target,token){if(token!==generation||!node?.parentElement||skip(node.parentElement))return;const source=rememberText(node),next=target==='ko'?source:await toEnglish(source);if(token!==generation||!node.isConnected)return;if(node.nodeValue!==next)node.nodeValue=next;renderedText.set(node,next);}
 async function translateAttrs(el,target,token){if(token!==generation||!el?.isConnected||skip(el))return;const source=rememberAttrs(el),rendered=renderedAttrs.get(el)||{};for(const [attr,value] of Object.entries(source)){const next=target==='ko'?value:await toEnglish(value);if(token!==generation||!el.isConnected)return;if(el.getAttribute(attr)!==next)el.setAttribute(attr,next);rendered[attr]=next;}renderedAttrs.set(el,rendered);}
-async function run(root=document.body,target=lang(),token=++generation){if(!root||token!==generation)return false;document.documentElement.lang=target;const nodes=[];if(root.nodeType===Node.TEXT_NODE){if(root.nodeValue?.trim()&&!skip(root.parentElement))nodes.push(root);}else{const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode(node){return node.nodeValue?.trim()&&!skip(node.parentElement)?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_REJECT;}});let node;while((node=walker.nextNode()))nodes.push(node);}const attrs=[];if(root.nodeType===Node.ELEMENT_NODE){if(ATTRS.some(a=>root.hasAttribute?.(a))&&!skip(root))attrs.push(root);root.querySelectorAll?.('[placeholder],[aria-label],[title]').forEach(el=>{if(!skip(el))attrs.push(el);});}for(let i=0;i<nodes.length;i+=8){await Promise.all(nodes.slice(i,i+8).map(node=>translateNode(node,target,token)));if(token!==generation)return false;}for(let i=0;i<attrs.length;i+=8){await Promise.all(attrs.slice(i,i+8).map(el=>translateAttrs(el,target,token)));if(token!==generation)return false;}return true;}
-function bindRetry(){if(retryBound||!nativeSupported)return;retryBound=true;const retry=()=>{retryBound=false;translatorCache.clear();void run(document.body,lang());};document.addEventListener('click',retry,{capture:true,once:true});document.addEventListener('keydown',retry,{capture:true,once:true});}
-const observer=new MutationObserver(records=>{const target=lang(),token=generation;for(const record of records){if(record.type==='characterData'){void translateNode(record.target,target,token);continue;}if(record.type==='attributes'){void translateAttrs(record.target,target,token);continue;}for(const added of record.addedNodes)void run(added,target,token);}});
-if(document.body)observer.observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:ATTRS});
-window.addEventListener('stellaris:languagechange',event=>{const target=event.detail?.language==='en-US'?'en-US':'ko';void run(document.body,target);});
-window.STELLARIS_AUTO_TRANSLATE={translate:()=>run(document.body,lang()),currentLanguage:lang,supported:true,nativeSupported};
-queueMicrotask(()=>void run(document.body,lang()));
+async function run(root=document.body,target=lang(),token=++generation){if(adminEditorPage)return true;if(!root||token!==generation)return false;document.documentElement.lang=target;const nodes=[];if(root.nodeType===Node.TEXT_NODE){if(root.nodeValue?.trim()&&!skip(root.parentElement))nodes.push(root);}else{const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode(node){return node.nodeValue?.trim()&&!skip(node.parentElement)?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_REJECT;}});let node;while((node=walker.nextNode()))nodes.push(node);}const attrs=[];if(root.nodeType===Node.ELEMENT_NODE){if(ATTRS.some(a=>root.hasAttribute?.(a))&&!skip(root))attrs.push(root);root.querySelectorAll?.('[placeholder],[aria-label],[title]').forEach(el=>{if(!skip(el))attrs.push(el);});}for(let i=0;i<nodes.length;i+=8){await Promise.all(nodes.slice(i,i+8).map(node=>translateNode(node,target,token)));if(token!==generation)return false;}for(let i=0;i<attrs.length;i+=8){await Promise.all(attrs.slice(i,i+8).map(el=>translateAttrs(el,target,token)));if(token!==generation)return false;}return true;}
+function bindRetry(){if(adminEditorPage||retryBound||!nativeSupported)return;retryBound=true;const retry=()=>{retryBound=false;translatorCache.clear();void run(document.body,lang());};document.addEventListener('click',retry,{capture:true,once:true});document.addEventListener('keydown',retry,{capture:true,once:true});}
+
+let observer=null;
+if(!adminEditorPage&&document.body){
+  let queued=false,pending=[];
+  observer=new MutationObserver(records=>{
+    pending.push(...records);
+    if(queued)return;
+    queued=true;
+    requestAnimationFrame(()=>{
+      queued=false;
+      const recordsNow=pending;pending=[];
+      const target=lang(),token=generation,roots=new Set();
+      for(const record of recordsNow){
+        if(record.type==='characterData'){void translateNode(record.target,target,token);continue;}
+        if(record.type==='attributes'){void translateAttrs(record.target,target,token);continue;}
+        for(const added of record.addedNodes)roots.add(added);
+      }
+      for(const added of roots)void run(added,target,token);
+    });
+  });
+  observer.observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:ATTRS});
+}
+window.addEventListener('stellaris:languagechange',event=>{if(adminEditorPage)return;const target=event.detail?.language==='en-US'?'en-US':'ko';void run(document.body,target);});
+window.STELLARIS_AUTO_TRANSLATE={translate:()=>adminEditorPage?Promise.resolve(true):run(document.body,lang()),currentLanguage:lang,supported:true,nativeSupported};
+if(!adminEditorPage)queueMicrotask(()=>void run(document.body,lang()));

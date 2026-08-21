@@ -1,5 +1,7 @@
 (()=>{
 'use strict';
+if(window.__STELLARIS_APP_BOOTED__)return;
+window.__STELLARIS_APP_BOOTED__=true;
 const scriptEl=document.currentScript;
 const rootURL=new URL('.',scriptEl?.src||location.href);
 const A=path=>new URL(path,rootURL).href;
@@ -61,7 +63,7 @@ installCommonChrome();
 
 const authSessionScript=document.createElement('script');
 authSessionScript.type='module';
-authSessionScript.src=A('auth-session.js?v=20260820-runtime-v3');
+authSessionScript.src=A('auth-session.js?v=20260821-runtime-v4');
 document.head.appendChild(authSessionScript);
 
 document.querySelectorAll('.book-link').forEach(el=>el.textContent='항공권 예약하기');

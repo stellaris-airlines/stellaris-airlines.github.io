@@ -9,10 +9,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Michroma&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../styles.css">
   <link rel="stylesheet" href="../service-pages.css?v=20260817-digital-v1">
-  <link rel="stylesheet" href="admin.css?v=20260821-stability-v2">
+  <link rel="stylesheet" href="admin.css?v=20260821-freeze-fix-v2">
 </head>
 <body data-prefix="../" data-page="admin" data-auto-translate-skip="true">
-  <div id="siteHeader"></div>
   <main>
     <section class="page-hero compact-hero"><div class="shell"><div class="breadcrumbs"><a href="../">홈</a><span>/</span><span>관리자</span></div><div class="page-hero-grid"><div><p class="eyebrow">ADMIN CONSOLE</p><h1>Operations<br>control.</h1></div><p>홈 콘텐츠, 공지사항, 운항 현황과 예약 데이터를 통합 관리합니다.</p></div></div></section>
     <section class="content-section white"><div class="shell admin-shell">
@@ -24,8 +23,8 @@
           <form data-banner-form class="admin-form"><label class="check-row"><input type="checkbox" name="active" checked><span>배너 표시</span></label><label>배너 문구<input type="text" name="text" maxlength="180" required></label><div class="admin-grid"><label>링크 버튼 문구<input type="text" name="linkLabel" maxlength="40"></label><label>링크 주소<input type="text" name="linkUrl" maxlength="220"></label></div><button class="btn btn-olive" type="submit">배너 저장</button></form>
         </section>
 
-        <section class="admin-panel"><div class="admin-panel-head"><div><p class="eyebrow">HOME EXPERIENCE</p><h2>홈 운영 콘텐츠</h2></div><span>siteContent/homeExperience</span></div>
-          <form data-home-form class="admin-form"><label>Hero 제목<input name="heroTitle" maxlength="100"></label><label>Hero 설명<textarea name="heroBody" rows="3" maxlength="400"></textarea></label><div class="admin-grid"><label>프로모션 제목<input name="promotionTitle" maxlength="80"></label><label>추천 노선 제목<input name="routeTitle" maxlength="80"></label></div><div class="admin-grid"><label>프로모션 내용<textarea name="promotionBody" rows="3" maxlength="500"></textarea></label><label>추천 노선 내용<textarea name="routeBody" rows="3" maxlength="500"></textarea></label></div><label class="check-row"><input type="checkbox" name="popupActive"><span>홈 팝업 표시</span></label><div class="admin-grid"><label>팝업 제목<input name="popupTitle" maxlength="80"></label><label>팝업 내용<input name="popupBody" maxlength="300"></label></div><button class="btn btn-olive" type="submit">홈 콘텐츠 저장</button></form>
+        <section class="admin-panel"><div class="admin-panel-head"><div><p class="eyebrow">HOME EXPERIENCE</p><h2>홈 운영 콘텐츠</h2></div><span>고정 영역</span></div>
+          <form data-home-form class="admin-form"><label class="check-row"><input type="checkbox" name="popupActive"><span>구형 홈 팝업 표시</span></label><div class="admin-grid"><label>팝업 제목<input name="popupTitle" maxlength="80"></label><label>팝업 내용<input name="popupBody" maxlength="300"></label></div><button class="btn btn-olive" type="submit">홈 콘텐츠 저장</button></form>
         </section>
 
         <section class="admin-panel"><div class="admin-panel-head"><div><p class="eyebrow">FLIGHT OPERATIONS</p><h2>운항편 운영</h2></div><a href="../flight-information/#flight-status" target="_blank" rel="noopener">공개 운항현황 →</a></div>
@@ -41,11 +40,9 @@
       </div>
     </div></section>
   </main>
-  <div id="siteFooter"></div>
-  <script src="../app.js?v=20260821-audit-v2"></script>
-  <script type="module" src="admin-home-bilingual.js?v=20260821-audit-v2"></script>
-  <script type="module" src="admin-bilingual.js?v=20260821-audit-v2"></script>
-  <script type="module" src="admin.js?v=20260817-admin-v4"></script>
-  <script type="module" src="admin-careers.js?v=20260817-careers-v2"></script>
+  <script type="module" src="admin-home-bilingual.js?v=20260821-freeze-fix-v2"></script>
+  <script type="module" src="admin-bilingual.js?v=20260821-freeze-fix-v2"></script>
+  <script type="module" src="admin.js?v=20260821-freeze-fix-v2"></script>
+  <script type="module" src="admin-careers.js?v=20260821-freeze-fix-v2"></script>
 </body>
 </html>

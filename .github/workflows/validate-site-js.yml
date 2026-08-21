@@ -4,45 +4,12 @@ on:
   push:
     branches: ["main"]
     paths:
-      - "app.js"
-      - "operations-model.js"
-      - "auth-session.js"
-      - "auto-translate.js"
-      - "site-navigation.js"
-      - "site-v3.js"
-      - "site-v3.css"
-      - "site-content.js"
-      - "home-popup.js"
-      - "home-popup.css"
-      - "gmail-inquiry-fix.js"
-      - "legacy-popup-kill.js"
-      - "digital-services.js"
-      - "travel-service-core.js"
-      - "service-tools.js"
-      - "site-experience-extension-v2.js"
-      - "service-careers-i18n.js"
-      - "legal-i18n.js"
-      - "firebase-config.js"
+      - "**/*.html"
+      - "**/*.js"
+      - "**/*.css"
+      - "firestore.rules"
       - "storage.rules"
       - "firebase.json"
-      - "login/**/*.js"
-      - "signup/**/*.js"
-      - "flight-information/**/*.js"
-      - "book-your-journey/**/*.js"
-      - "booking-complete/**/*.js"
-      - "find-your-reservations/**/*.js"
-      - "view-my-starmiles/**/*.js"
-      - "admin/**/*.js"
-      - "admin/**/*.css"
-      - "notices/**/*.js"
-      - "notices/**/*.css"
-      - "check-in/**/*.js"
-      - "boarding-pass/**/*.js"
-      - "booking-confirmation/**/*.js"
-      - "my-page/**/*.js"
-      - "careers/**/*.js"
-      - "translations.js"
-      - "translations-extra.js"
       - ".github/workflows/validate-site-js.yml"
   workflow_dispatch:
 
@@ -52,18 +19,73 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Check JavaScript syntax
         shell: bash
         run: |
-          for file in app.js operations-model.js auth-session.js auto-translate.js site-navigation.js site-v3.js site-content.js home-popup.js gmail-inquiry-fix.js legacy-popup-kill.js digital-services.js travel-service-core.js service-tools.js site-experience-extension-v2.js service-careers-i18n.js legal-i18n.js firebase-config.js translations.js translations-extra.js; do
-            node --input-type=module --check < "$file"
-          done
+          set -euo pipefail
           while IFS= read -r -d '' file; do
+            echo "Checking $file"
             node --input-type=module --check < "$file"
-          done < <(find login signup flight-information book-your-journey booking-complete find-your-reservations view-my-starmiles admin notices check-in boarding-pass booking-confirmation my-page careers -type f -name '*.js' -print0)
+          done < <(find . -type f -name '*.js' -not -path './.git/*' -print0)
+
+      - name: Check local script and stylesheet references
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+          from urllib.parse import urlsplit
+
+          root = Path('.').resolve()
+          failures = []
+
+          class Parser(HTMLParser):
+              def __init__(self, html_path):
+                  super().__init__()
+                  self.html_path = html_path
+              def handle_starttag(self, tag, attrs):
+                  attrs = dict(attrs)
+                  refs = []
+                  if tag == 'script' and attrs.get('src'):
+                      refs.append(attrs['src'])
+                  if tag == 'link' and attrs.get('href') and 'stylesheet' in attrs.get('rel','').lower():
+                      refs.append(attrs['href'])
+                  for raw in refs:
+                      value = raw.strip()
+                      if not value or value.startswith(('http://','https://','//','data:','blob:')):
+                          continue
+                      path = urlsplit(value).path
+                      if not path:
+                          continue
+                      if path.startswith('/'):
+                          target = root / path.lstrip('/')
+                      else:
+                          target = (self.html_path.parent / path).resolve()
+                      try:
+                          target.relative_to(root)
+                      except ValueError:
+                          failures.append(f'{self.html_path}: reference escapes repository: {value}')
+                          continue
+                      if not target.exists():
+                          failures.append(f'{self.html_path}: missing local asset: {value} -> {target.relative_to(root)}')
+
+          for html in root.rglob('*.html'):
+              if '.git' in html.parts:
+                  continue
+              parser = Parser(html)
+              parser.feed(html.read_text(encoding='utf-8'))
+
+          if failures:
+              print('\n'.join(failures))
+              raise SystemExit(1)
+          PY
+
       - name: Digital service smoke checks
         shell: bash
         run: |
+          set -euo pipefail
           test -f check-in/index.html
           test -f boarding-pass/index.html
           test -f booking-confirmation/index.html
@@ -102,21 +124,39 @@ jobs:
           test -f admin/admin-media.js
           test -f admin/rich-editor.js
           test -f book-your-journey/booking-stability.js
+
           grep -q "출발 예정 시각 24시간 전" check-in/index.html
           grep -q "data-operation-form" admin/index.html
-          grep -q "admin-home-bilingual.js?v=20260820-home-bilingual-v1" admin/index.html
-          grep -q "admin-bilingual.js?v=20260820-bilingual-v4" admin/index.html
+          grep -q "admin-home-bilingual.js" admin/index.html
+          grep -q "admin-bilingual.js" admin/index.html
           grep -q "data-notice-search" notices/index.html
-          grep -q "notices.js?v=20260820-notices-rich-v1" notices/index.html
+          grep -q "notices.js" notices/index.html
           grep -q "digital-services.js" auth-session.js
-          grep -q "auto-translate.js?v=20260820-auto-i18n-v3" auth-session.js
-          grep -q "site-navigation.js?v=20260820-nav-v3" auth-session.js
-          grep -q "auth-session.js?v=20260820-runtime-v3" app.js
+          grep -q "auto-translate.js" auth-session.js
+          grep -q "site-navigation.js" auth-session.js
+          grep -q "auth-session.js" app.js
           grep -q "instagram.com/flystellaris" site-v3.js
           grep -q "api.open-meteo.com" site-v3.js
           grep -q "STELLARIS_BILINGUAL_V1" admin/admin-bilingual.js
           grep -q "STELLARIS_BILINGUAL_V1" notices/notices.js
           grep -q "STELLARIS_HOME_POPUP_V1" admin/admin-popup.js
           grep -q "STELLARIS_HOME_POPUP_V1" home-popup.js
+          grep -q "home_popup_config" admin/admin-popup.js
+          grep -q "home_popup_config" home-popup.js
           grep -q "mail.google.com" gmail-inquiry-fix.js
           grep -q "firebase.storage" storage.rules
+
+      - name: Reject known bad runtime patterns
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -R --line-number --exclude-dir=.git --exclude='*.md' "__home_popup__" .; then
+            echo "Reserved Firestore document id __home_popup__ must not be used."
+            exit 1
+          fi
+          if grep -R --line-number --exclude-dir=.git "new MutationObserver(cleanAdminList)" admin; then
+            echo "Unthrottled admin cleanup observer detected."
+            exit 1
+          fi
+          grep -q "__STELLARIS_APP_BOOTED__" app.js
+          grep -q "requestAnimationFrame(refreshHeader)" auth-session.js

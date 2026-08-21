@@ -9,8 +9,10 @@ const isEnglish=()=>lang()==='en-US';
 const L=(ko,en)=>isEnglish()?en:ko;
 
 function ensureStyle(){
-  if(document.querySelector('link[data-site-v3]'))return;
-  const link=document.createElement('link');link.rel='stylesheet';link.href=H('site-v3.css?v=20260820-v1');link.dataset.siteV3='true';document.head.appendChild(link);
+  let link=document.querySelector('link[data-site-v3]');
+  const href=H('site-v3.css?v=20260821-v3');
+  if(link){if(link.href!==href)link.href=href;return;}
+  link=document.createElement('link');link.rel='stylesheet';link.href=href;link.dataset.siteV3='true';document.head.appendChild(link);
 }
 
 function normalizeLanguage(){
@@ -19,18 +21,21 @@ function normalizeLanguage(){
 
 function globeIcon(){return '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9S14.5 18.3 12 21M12 3C9.5 5.7 8.2 8.7 8.2 12S9.5 18.3 12 21"/></svg>';}
 function installLanguageToggle(){
-  document.querySelectorAll('.language-single-toggle').forEach(button=>button.remove());
   document.querySelectorAll('[data-language-switcher]').forEach(switcher=>{
     const tools=switcher.parentElement;if(!tools)return;
-    const button=document.createElement('button');button.type='button';button.className='language-single-toggle';button.dataset.simpleLanguageToggle='true';
-    const sync=()=>{button.innerHTML=globeIcon()+`<span>${isEnglish()?'한국어':'Eng'}</span>`;button.setAttribute('aria-label',isEnglish()?'한국어로 보기':'View in English');};
-    button.addEventListener('click',()=>{
-      const target=isEnglish()?'ko':'en-US';
-      const option=switcher.querySelector(`.language-option[data-lang="${target}"]`);
-      if(option){option.click();}
-      else{try{localStorage.setItem('stellaris-language',target);}catch(error){}window.dispatchEvent(new CustomEvent('stellaris:languagechange',{detail:{language:target}}));location.reload();}
-    });
-    switcher.insertAdjacentElement('afterend',button);sync();
+    let button=tools.querySelector('.language-single-toggle');
+    if(!button){
+      button=document.createElement('button');button.type='button';button.className='language-single-toggle';button.dataset.simpleLanguageToggle='true';
+      button.addEventListener('click',()=>{
+        const target=isEnglish()?'ko':'en-US';
+        const option=switcher.querySelector(`.language-option[data-lang="${target}"]`);
+        if(option){option.click();}
+        else{try{localStorage.setItem('stellaris-language',target);}catch(error){}window.dispatchEvent(new CustomEvent('stellaris:languagechange',{detail:{language:target}}));location.reload();}
+      });
+      switcher.insertAdjacentElement('afterend',button);
+    }
+    button.innerHTML=globeIcon()+`<span>${isEnglish()?'한국어':'Eng'}</span>`;
+    button.setAttribute('aria-label',isEnglish()?'한국어로 보기':'View in English');
   });
 }
 
@@ -97,10 +102,11 @@ function installHomeSearch(){
   const origins=Object.keys(AIRPORTS).filter(code=>availableDestinations(code).length);buildAirportOptions(from,origins);if(origins.includes('ICN'))from.value='ICN';
   const syncTo=()=>{const choices=availableDestinations(from.value);buildAirportOptions(to,choices);if(!choices.includes(to.value))to.value=choices[0]||'';void loadWeather(from.value,form.querySelector('[data-weather-from]'));void loadWeather(to.value,form.querySelector('[data-weather-to]'));};syncTo();
   const today=new Date(),max=addMonths(today,6),defaultReturn=new Date(today);defaultReturn.setDate(defaultReturn.getDate()+7);depart.min=dateISO(today);depart.max=dateISO(max);depart.value=dateISO(today);ret.min=dateISO(today);ret.max=dateISO(max);ret.value=dateISO(defaultReturn>max?max:defaultReturn);
+  depart.addEventListener('change',()=>{ret.min=depart.value||dateISO(today);if(ret.value&&ret.value<ret.min)ret.value=ret.min;});
   from.addEventListener('change',syncTo);to.addEventListener('change',()=>loadWeather(to.value,form.querySelector('[data-weather-to]')));
   form.querySelector('[data-home-swap]').addEventListener('click',()=>{const a=from.value,b=to.value;if(origins.includes(b)){from.value=b;syncTo();if([...to.options].some(o=>o.value===a))to.value=a;}void loadWeather(from.value,form.querySelector('[data-weather-from]'));void loadWeather(to.value,form.querySelector('[data-weather-to]'));});
   document.querySelectorAll('[data-home-trip]').forEach(button=>button.addEventListener('click',()=>{trip=button.dataset.homeTrip;document.querySelectorAll('[data-home-trip]').forEach(x=>x.classList.toggle('active',x===button));retWrap.hidden=trip==='oneway';ret.required=trip==='round';}));
-  form.addEventListener('submit',event=>{event.preventDefault();const url=new URL(H('book-your-journey/'));url.searchParams.set('from',from.value);url.searchParams.set('to',to.value);url.searchParams.set('departure',depart.value);url.searchParams.set('trip',trip);url.searchParams.set('passengers',form.querySelector('[data-home-passengers]').value||'1');if(trip==='round')url.searchParams.set('return',ret.value);location.href=url.href;});
+  form.addEventListener('submit',event=>{event.preventDefault();if(!from.value||!to.value||!depart.value)return;const url=new URL(H('book-your-journey/'));url.searchParams.set('from',from.value);url.searchParams.set('to',to.value);url.searchParams.set('departure',depart.value);url.searchParams.set('trip',trip);url.searchParams.set('passengers',form.querySelector('[data-home-passengers]').value||'1');if(trip==='round')url.searchParams.set('return',ret.value);location.href=url.href;});
 }
 
 function removeAllServicesSection(){
@@ -115,7 +121,7 @@ function installEmailInquiry(){
 }
 
 function stripVisibleContactEmail(){
-  const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);let node;while((node=walker.nextNode())){if(node.parentElement?.closest('.email-modal-v3'))continue;const value=node.nodeValue||'';if(/contact\.?\s*stellarisairlines@gmail\.com/i.test(value)||/contect\.?\s*stellarisairlines@gmail\.com/i.test(value))node.nodeValue=value.replace(/con?tact\.?\s*stellarisairlines@gmail\.com/ig,'').trim();}
+  const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);let node;while((node=walker.nextNode())){if(node.parentElement?.closest('.email-modal-v3'))continue;const value=node.nodeValue||'';const next=value.replace(/(?:contact|contect)\.?\s*stellarisairlines@gmail\.com/ig,'').trim();if(next!==value)node.nodeValue=next;}
 }
 
 function prefillBookingFromHome(){
@@ -128,5 +134,5 @@ function prefillBookingFromHome(){
 function refresh(){installLanguageToggle();installMegaMenu();installFooter();if(document.body.dataset.page==='home'){removeAllServicesSection();installHomeSearch();installEmailInquiry();}stripVisibleContactEmail();}
 
 ensureStyle();normalizeLanguage();refresh();prefillBookingFromHome();
-setTimeout(refresh,250);setTimeout(refresh,1000);
+requestAnimationFrame(refresh);setTimeout(refresh,400);
 window.addEventListener('stellaris:languagechange',()=>setTimeout(()=>{refresh();if(document.body.dataset.page==='home')location.reload();},0));

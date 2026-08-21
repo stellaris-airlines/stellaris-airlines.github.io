@@ -2,7 +2,7 @@ import { auth } from './firebase-config.js';
 import './auto-translate.js?v=20260820-auto-i18n-v3';
 import './site-content.js?v=20260820-site-content-v4';
 import './digital-services.js?v=20260817-digital-v2';
-import './site-navigation.js?v=20260820-nav-v3';
+import './site-navigation.js?v=20260821-nav-v4';
 import {
   browserLocalPersistence,
   onAuthStateChanged,
@@ -34,12 +34,12 @@ function translateAccountNavigation(lang = currentLanguage()) {
   const labels = accountLabels[lang] || accountLabels.ko;
   document.querySelectorAll('a[href*="view-my-starmiles/"]').forEach((element) => {
     if (element.hasAttribute('data-auth-user')) return;
-    element.textContent = labels.starMiles;
+    if(element.textContent!==labels.starMiles)element.textContent = labels.starMiles;
   });
-  logoutElements().forEach((element) => { element.textContent = labels.logout; });
+  logoutElements().forEach((element) => { if(element.textContent!==labels.logout)element.textContent = labels.logout; });
   document.querySelectorAll('[data-notice-shortcut]').forEach(element=>{
-    element.setAttribute('aria-label',labels.notices);
-    element.setAttribute('title',labels.notices);
+    if(element.getAttribute('aria-label')!==labels.notices)element.setAttribute('aria-label',labels.notices);
+    if(element.getAttribute('title')!==labels.notices)element.setAttribute('title',labels.notices);
   });
 }
 
@@ -61,9 +61,13 @@ function installNoticeShortcut(){
     link.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 13.5V10a1 1 0 0 1 1-1H8l7-3.5v12L8 14H5.5a1 1 0 0 1-1-1Zm3.5.5 1.2 4.1a1 1 0 0 0 1 .7h1.4l-1.5-4.8M17.5 8.5a4.5 4.5 0 0 1 0 6"/></svg><span class="sr-only">공지사항</span>';
     language.insertAdjacentElement('afterend',link);
   }
-  Object.assign(link.style,{display:'inline-flex',alignItems:'center',justifyContent:'center',flex:'0 0 40px',width:'40px',height:'40px'});
+  if(link.dataset.layoutReady!=='true'){
+    Object.assign(link.style,{display:'inline-flex',alignItems:'center',justifyContent:'center',flex:'0 0 40px',width:'40px',height:'40px'});
+    link.dataset.layoutReady='true';
+  }
   const label=(accountLabels[currentLanguage()]||accountLabels.ko).notices;
-  link.setAttribute('aria-label',label);link.setAttribute('title',label);
+  if(link.getAttribute('aria-label')!==label)link.setAttribute('aria-label',label);
+  if(link.getAttribute('title')!==label)link.setAttribute('title',label);
 }
 function installExtendedNavigation() {
   const seatsHref=rootHref('seats/');
@@ -115,7 +119,8 @@ function renderUser(user) {
   userElements().forEach((element) => {
     element.hidden = false;
     element.dataset.autoTranslateSkip='true';
-    element.textContent = user.displayName || user.email || 'Stellaris Member';
+    const label=user.displayName || user.email || 'Stellaris Member';
+    if(element.textContent!==label)element.textContent = label;
   });
   logoutElements().forEach((element) => { element.hidden = false; });
   document.querySelectorAll('[data-mypage-tool]').forEach(element=>{element.hidden=false;});
@@ -127,7 +132,9 @@ installExtendedNavigation();
 translateAccountNavigation();
 const headerHost=document.getElementById('siteHeader')||document.querySelector('.site-header')?.parentElement;
 if(headerHost){
-  const headerObserver=new MutationObserver(()=>queueMicrotask(installNoticeShortcut));
+  let headerQueued=false;
+  const refreshHeader=()=>{headerQueued=false;installNoticeShortcut();};
+  const headerObserver=new MutationObserver(()=>{if(headerQueued)return;headerQueued=true;requestAnimationFrame(refreshHeader);});
   headerObserver.observe(headerHost,{childList:true,subtree:true});
 }
 window.addEventListener('stellaris:languagechange', (event) => {
@@ -136,7 +143,7 @@ window.addEventListener('stellaris:languagechange', (event) => {
   queueMicrotask(()=>window.STELLARIS_AUTO_TRANSLATE?.translate?.());
 });
 
-await setPersistence(auth, browserLocalPersistence);
+try{await setPersistence(auth, browserLocalPersistence);}catch(error){console.warn('Auth persistence unavailable',error);}
 onAuthStateChanged(auth, (user) => {
   if (user) renderUser(user);
   else renderGuest();
@@ -145,7 +152,6 @@ onAuthStateChanged(auth, (user) => {
 logoutElements().forEach((element) => {
   element.addEventListener('click', async (event) => {
     event.preventDefault();
-    await signOut(auth);
-    window.location.assign(new URL('./', import.meta.url).href);
+    try{await signOut(auth);}finally{window.location.assign(new URL('./', import.meta.url).href);}
   });
 });
